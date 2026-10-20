@@ -1,6 +1,6 @@
 import { db } from "@/lib/firebase";
 import { mergeTemplates } from "@/lib/reportingUtils";
-import { ReportSectionDef, ReportTemplate, WeeklyReport } from "@/types/reporting";
+import { MonthlyPackage, ReportSectionDef, ReportTemplate, WeeklyReport } from "@/types/reporting";
 import { doc, getDoc, serverTimestamp, setDoc } from "firebase/firestore";
 
 const GLOBAL_ADMIN_DOC_ID = "global_admin";
@@ -179,6 +179,62 @@ export async function fetchUserWeeklyReportsHistory(userId: string): Promise<Wee
     return reports.sort((a, b) => b.weekStartDate.localeCompare(a.weekStartDate));
   } catch (err) {
     console.warn(`Could not fetch weekly history for user ${userId}:`, err);
+    return [];
+  }
+}
+
+/**
+ * Fetches or compiles a MonthlyPackage document for a user.
+ */
+export async function fetchOrCompileMonthlyPackage(
+  userId: string,
+  userName: string,
+  year: number,
+  month: number
+): Promise<MonthlyPackage> {
+  const { compileMonthlyPackage } = await import("@/lib/reportingUtils");
+  const docId = `${userId}_${year}_M${String(month).padStart(2, "0")}`;
+  try {
+    const docRef = doc(db, "monthlyPackages", docId);
+    const snap = await getDoc(docRef);
+    if (snap.exists()) {
+      return { id: snap.id, ...snap.data() } as MonthlyPackage;
+    }
+  } catch (err) {
+    console.warn(`Could not fetch monthly package ${docId}:`, err);
+  }
+
+  // Compile on-demand from weekly reports history
+  const history = await fetchUserWeeklyReportsHistory(userId);
+  const compiled = compileMonthlyPackage(userId, userName, year, month, history);
+
+  if (compiled.includedWeeklyReportIds.length > 0) {
+    try {
+      const docRef = doc(db, "monthlyPackages", docId);
+      await setDoc(docRef, { ...compiled, compiledAt: serverTimestamp() }, { merge: true });
+    } catch (e) {
+      console.warn("Could not cache compiled monthly package:", e);
+    }
+  }
+
+  return compiled;
+}
+
+/**
+ * Fetches all compiled monthly packages for a user.
+ */
+export async function fetchUserMonthlyPackagesHistory(userId: string): Promise<MonthlyPackage[]> {
+  const { collection, query, where, getDocs } = await import("firebase/firestore");
+  try {
+    const q = query(collection(db, "monthlyPackages"), where("userId", "==", userId));
+    const snap = await getDocs(q);
+    const packages = snap.docs.map((doc) => ({ id: doc.id, ...doc.data() } as MonthlyPackage));
+    return packages.sort((a, b) => {
+      if (a.year !== b.year) return b.year - a.year;
+      return b.month - a.month;
+    });
+  } catch (err) {
+    console.warn(`Could not fetch monthly packages history for user ${userId}:`, err);
     return [];
   }
 }
