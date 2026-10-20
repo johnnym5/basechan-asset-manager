@@ -1,6 +1,6 @@
 import { db } from "@/lib/firebase";
 import { mergeTemplates } from "@/lib/reportingUtils";
-import { ReportSectionDef, ReportTemplate } from "@/types/reporting";
+import { ReportSectionDef, ReportTemplate, WeeklyReport } from "@/types/reporting";
 import { doc, getDoc, serverTimestamp, setDoc } from "firebase/firestore";
 
 const GLOBAL_ADMIN_DOC_ID = "global_admin";
@@ -103,4 +103,82 @@ export async function fetchMergedTemplate(userId: string): Promise<ReportSection
     fetchUserTemplate(userId),
   ]);
   return mergeTemplates(globalSections, userSections);
+}
+
+/**
+ * Fetches a specific weekly report for a user by year and weekNumber.
+ */
+export async function fetchWeeklyReport(
+  userId: string,
+  year: number,
+  weekNumber: number
+): Promise<WeeklyReport | null> {
+  const docId = `${userId}_${year}_W${String(weekNumber).padStart(2, "0")}`;
+  try {
+    const docRef = doc(db, "weeklyReports", docId);
+    const snap = await getDoc(docRef);
+    if (snap.exists()) {
+      return { id: snap.id, ...snap.data() } as WeeklyReport;
+    }
+  } catch (err) {
+    console.warn(`Could not fetch weekly report ${docId}:`, err);
+  }
+  return null;
+}
+
+/**
+ * Saves a draft weekly report.
+ */
+export async function saveWeeklyReportDraft(
+  reportData: Partial<WeeklyReport> & { id: string; userId: string; year: number; weekNumber: number }
+): Promise<void> {
+  const docRef = doc(db, "weeklyReports", reportData.id);
+  await setDoc(
+    docRef,
+    {
+      ...reportData,
+      status: reportData.status || "DRAFT",
+      updatedAt: serverTimestamp(),
+    },
+    { merge: true }
+  );
+}
+
+/**
+ * Submits a weekly report, freezing its current merged template as snapshotTemplate.
+ */
+export async function submitWeeklyReport(
+  reportId: string,
+  snapshotTemplate: ReportSectionDef[],
+  data: Record<string, any[]>,
+  totals: Record<string, Record<string, number>>
+): Promise<void> {
+  const docRef = doc(db, "weeklyReports", reportId);
+  await setDoc(
+    docRef,
+    {
+      status: "SUBMITTED",
+      submittedAt: serverTimestamp(),
+      snapshotTemplate,
+      data,
+      totals,
+    },
+    { merge: true }
+  );
+}
+
+/**
+ * Fetches all weekly reports for a user across history.
+ */
+export async function fetchUserWeeklyReportsHistory(userId: string): Promise<WeeklyReport[]> {
+  const { collection, query, where, getDocs } = await import("firebase/firestore");
+  try {
+    const q = query(collection(db, "weeklyReports"), where("userId", "==", userId));
+    const snap = await getDocs(q);
+    const reports = snap.docs.map((doc) => ({ id: doc.id, ...doc.data() } as WeeklyReport));
+    return reports.sort((a, b) => b.weekStartDate.localeCompare(a.weekStartDate));
+  } catch (err) {
+    console.warn(`Could not fetch weekly history for user ${userId}:`, err);
+    return [];
+  }
 }
