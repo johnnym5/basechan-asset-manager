@@ -1,0 +1,175 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function signedIn() { return request.auth != null; }
+    function isAdmin() { return signedIn() && request.auth.token.email.matches('.*@basechaninternational[.]com$'); }
+    function isStaff() { return signedIn() && request.auth.token.email.matches('^[^@]+[.]basechaninternational@gmail[.]com$'); }
+    function grantExists() { return signedIn() && exists(/databases/$(database)/documents/access_grants/$(request.auth.uid)); }
+    function grantData() { return get(/databases/$(database)/documents/access_grants/$(request.auth.uid)).data; }
+    function grantAction(page, action) {
+      return isStaff() && grantExists() && grantData().grants[page].actions.hasAny([action]);
+    }
+    function grantScope(page) { return grantData().grants[page].scope; }
+    function scoped(page, row) {
+      return grantExists() && (
+        grantScope(page) == 'all' ||
+        (grantScope(page) == 'branch' && (
+          (page == 'workbooks' && row.department == grantData().department) ||
+          (page != 'workbooks' && row.get('branch', row.get('assignedUserBranch', row.get('primaryOwnerBranch', row.get('assignedOrSharedBranch', ''))) ) == grantData().branch)
+        )) ||
+        (grantScope(page) == 'assigned' && (
+          (page == 'staff_inventory' && row.email == request.auth.token.email) ||
+          (page == 'physical_assets' && (row.get('assignedStaffEmail', '') == request.auth.token.email || row.get('assignedStaffUid', '') == request.auth.uid)) ||
+          (page == 'digital_credentials' && (row.get('assignedUserEmail', '') == request.auth.token.email || row.get('assignedUserUid', '') == request.auth.uid)) ||
+          (page == 'workbooks' && row.get('primaryOwnerEmail', '') == request.auth.token.email) ||
+          (page == 'facilities' && row.get('assignedOrSharedEmail', '') == request.auth.token.email)
+        ))
+      );
+    }
+    function ownAsset(row) {
+      return row.get('assignedStaffEmail', '') == request.auth.token.email || row.get('assignedStaffUid', '') == request.auth.uid;
+    }
+    function ownCredential(row) {
+      return row.get('assignedUserEmail', '') == request.auth.token.email || row.get('assignedUserUid', '') == request.auth.uid;
+    }
+    function canRead(page, row) {
+      return isAdmin() ||
+        (page == 'physical_assets' && isStaff() && ownAsset(row)) ||
+        (page == 'digital_credentials' && isStaff() && ownCredential(row)) ||
+        (page == 'staff_inventory' && isStaff() && row.get('email', '') == request.auth.token.email) ||
+        (grantAction(page, 'read') && scoped(page, row));
+    }
+    function createAllowed(page) { return isAdmin() || (grantAction(page, 'create') && scoped(page, request.resource.data)); }
+    function scopedStaffEdit(page, fields) {
+      return grantAction(page, 'edit') && scoped(page, resource.data) && scoped(page, request.resource.data) &&
+        request.resource.data.diff(resource.data).affectedKeys().hasOnly(fields);
+    }
+    function archiveAllowed(page) {
+      return isAdmin() || (scoped(page, resource.data) && (
+        request.resource.data.diff(resource.data).affectedKeys().hasOnly(['archived', 'archivedAt', 'archivedBy', 'updatedAt']) && (
+          (resource.data.get('archived', false) == false && request.resource.data.get('archived', false) == true && grantAction(page, 'archive')) ||
+          (resource.data.get('archived', false) == true && request.resource.data.get('archived', false) == false && grantAction(page, 'restore'))
+        )
+      ));
+    }
+    function staffFieldsOnly(fields) { return request.resource.data.diff(resource.data).affectedKeys().hasOnly(fields); }
+    function protectedStaffEdit() {
+      return isStaff() && grantAction('staff_inventory', 'edit') && scoped('staff_inventory', resource.data) && scoped('staff_inventory', request.resource.data) &&
+        staffFieldsOnly(['name', 'position', 'phone', 'employmentDate', 'registeredUnder', 'updatedAt', 'archived', 'archivedAt', 'archivedBy']);
+    }
+    function physicalStaffEdit() {
+      return isStaff() && ownAsset(resource.data) && resource.data.get('isLocked', true) == false &&
+        request.resource.data.diff(resource.data).affectedKeys().hasOnly(['condition', 'status', 'updatedAt', 'lastStaffCheckin']);
+    }
+    function credentialStaffEdit() {
+      return isStaff() && grantAction('digital_credentials', 'edit') && scoped('digital_credentials', resource.data) && scoped('digital_credentials', request.resource.data) &&
+        (('rawPass' in request.resource.data.diff(resource.data).affectedKeys()) ? grantAction('digital_credentials', 'secretWrite') : true) &&
+        request.resource.data.diff(resource.data).affectedKeys().hasOnly(['platform', 'loginEmail', 'subAgentHandleId', 'userRole', 'rawPass', 'vaultStatus', 'updatedAt']);
+    }
+
+    match /users/{userId} {
+      allow read: if isAdmin() || (signedIn() && request.auth.uid == userId);
+      allow create: if signedIn() && request.auth.uid == userId && request.resource.data.uid == userId && request.resource.data.email == request.auth.token.email && request.resource.data.keys().hasOnly(['uid', 'email', 'displayName', 'photoURL', 'lastLogin', 'onboardingCompletedAt']) && (!('onboardingCompletedAt' in request.resource.data) || request.resource.data.onboardingCompletedAt is timestamp);
+      allow update: if signedIn() && request.auth.uid == userId && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['displayName', 'photoURL', 'lastLogin', 'onboardingCompletedAt']) && (!request.resource.data.diff(resource.data).affectedKeys().hasAny(['onboardingCompletedAt']) || request.resource.data.onboardingCompletedAt is timestamp);
+      allow delete: if false;
+    }
+
+    match /workspace_links/{linkId} {
+      allow read: if isAdmin() || (isStaff() && resource.data.get('archived', false) == false && (resource.data.audience == 'all' || (resource.data.audience == 'selected' && resource.data.get('assignedUids', []).hasAny([request.auth.uid]))));
+      allow create: if isAdmin() && request.resource.data.keys().hasOnly(['title', 'url', 'description', 'audience', 'assignedUids', 'createdBy', 'createdAt', 'updatedAt', 'archived']) && request.resource.data.title is string && request.resource.data.title.size() > 0 && request.resource.data.url is string && request.resource.data.url.matches('https://.*') && request.resource.data.audience in ['all', 'selected'] && request.resource.data.get('assignedUids', []) is list && request.resource.data.createdBy == request.auth.uid;
+      allow update: if isAdmin() && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['title', 'url', 'description', 'audience', 'assignedUids', 'updatedAt', 'archived']) && request.resource.data.url.matches('https://.*') && request.resource.data.audience in ['all', 'selected'] && request.resource.data.get('assignedUids', []) is list;
+      allow delete: if false;
+    }
+
+    match /workspace_favorites/{uid} {
+      allow read: if isAdmin() || (isStaff() && request.auth.uid == uid);
+      allow create, update: if isStaff() && request.auth.uid == uid && request.resource.data.keys().hasOnly(['uid', 'linkIds', 'updatedAt']) && request.resource.data.uid == uid && request.resource.data.linkIds is list && request.resource.data.linkIds.size() <= 100;
+      allow delete: if isStaff() && request.auth.uid == uid;
+    }
+
+    match /access_grants/{uid} {
+      allow read: if isAdmin() || (signedIn() && request.auth.uid == uid);
+      allow create, update: if isAdmin() && request.resource.data.uid == uid && request.resource.data.keys().hasOnly(['uid', 'email', 'branch', 'department', 'grants', 'updatedAt', 'updatedBy']);
+      allow delete: if isAdmin();
+    }
+
+    match /tasks/{taskId} {
+      allow read: if isAdmin() || (isStaff() && (resource.data.get('assignedToUid', '') == request.auth.uid || resource.data.get('createdByUid', '') == request.auth.uid));
+      allow create: if request.resource.data.status == 'open' && request.resource.data.createdByUid == request.auth.uid && request.resource.data.keys().hasOnly(['type', 'title', 'description', 'status', 'createdByUid', 'assignedToUid', 'assetId', 'assetTag', 'createdAt', 'updatedAt']) && ((isAdmin() && request.resource.data.type in ['repair_request', 'stocktake', 'handover']) || (isStaff() && request.resource.data.type == 'repair_request' && request.resource.data.assignedToUid == request.auth.uid));
+      allow update: if isAdmin() || (isStaff() && (resource.data.get('assignedToUid', '') == request.auth.uid || resource.data.get('createdByUid', '') == request.auth.uid) && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status', 'updatedAt']) && request.resource.data.status in ['open', 'in_progress', 'done']);
+      allow delete: if false;
+    }
+    match /stocktake_rounds/{roundId} {
+      allow read: if isAdmin() || (isStaff() && resource.data.get('assignedUids', []).hasAny([request.auth.uid]));
+      allow create: if isAdmin() && request.resource.data.status == 'open' && request.resource.data.createdBy == request.auth.uid && request.resource.data.keys().hasOnly(['title', 'branch', 'status', 'assignedUids', 'createdBy', 'createdAt']);
+      allow update: if isAdmin() && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status', 'closedAt']);
+      allow delete: if false;
+    }
+    match /stocktake_items/{itemId} {
+      allow read: if isAdmin() || (isStaff() && resource.data.get('assignedUid', '') == request.auth.uid);
+      allow create: if isAdmin() && request.resource.data.status == 'unverified' && request.resource.data.keys().hasOnly(['roundId', 'assetId', 'assetTag', 'branch', 'assignedUid', 'status', 'history']);
+      allow update: if isAdmin() || (isStaff() && resource.data.get('assignedUid', '') == request.auth.uid && resource.data.status == 'unverified' && request.resource.data.status in ['verified', 'missing', 'moved', 'damaged'] && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status', 'note', 'checkedBy', 'checkedAt', 'history']) && request.resource.data.checkedBy == request.auth.uid && request.resource.data.history.size() == resource.data.get('history', []).size() + 1 && request.resource.data.history[request.resource.data.history.size() - 1].checkedBy == request.auth.uid);
+      allow delete: if false;
+    }
+
+    match /staff_inventory/{id} {
+      allow read: if canRead('staff_inventory', resource.data);
+      allow create: if createAllowed('staff_inventory');
+      allow update: if isAdmin() || protectedStaffEdit() || archiveAllowed('staff_inventory');
+      allow delete: if false;
+    }
+    match /physical_assets/{id} {
+      allow read: if canRead('physical_assets', resource.data);
+      allow create: if createAllowed('physical_assets');
+      allow update: if isAdmin() || physicalStaffEdit() || (scopedStaffEdit('physical_assets', ['condition', 'status', 'updatedAt', 'lastStaffCheckin']) && resource.data.get('isLocked', true) == false) || archiveAllowed('physical_assets');
+      allow delete: if false;
+    }
+    match /digital_credentials/{id} {
+      // Legacy rawPass documents are deliberately hidden from non-admin clients until migrated.
+      allow read: if isAdmin() || (!('rawPass' in resource.data) && canRead('digital_credentials', resource.data));
+      allow create: if createAllowed('digital_credentials');
+      allow update: if isAdmin() || credentialStaffEdit() || scopedStaffEdit('digital_credentials', ['platform', 'loginEmail', 'subAgentHandleId', 'userRole', 'vaultStatus', 'updatedAt']) || archiveAllowed('digital_credentials');
+      allow delete: if false;
+    }
+    match /credential_secrets/{credentialId} {
+      function canReadSecret() {
+        let credentialPath = /databases/$(database)/documents/digital_credentials/$(credentialId);
+        return isAdmin() || (isStaff() && exists(credentialPath) && (
+          ownCredential(get(credentialPath).data) ||
+          (grantAction('digital_credentials', 'read') && scoped('digital_credentials', get(credentialPath).data))
+        ));
+      }
+      function canWriteSecret() {
+        let credentialPath = /databases/$(database)/documents/digital_credentials/$(credentialId);
+        return isAdmin() || (isStaff() && exists(credentialPath) && grantAction('digital_credentials', 'secretWrite') && scoped('digital_credentials', get(credentialPath).data));
+      }
+      allow get: if canReadSecret();
+      allow list: if false;
+      allow create, update: if canWriteSecret() && request.resource.data.keys().hasOnly(['secret', 'updatedAt']);
+      allow delete: if isAdmin();
+    }
+    match /workbooks/{id} {
+      allow read: if canRead('workbooks', resource.data);
+      allow create: if createAllowed('workbooks');
+      allow update: if isAdmin() || scopedStaffEdit('workbooks', ['title', 'businessFunction', 'cloudStorageUrl', 'lastAuditDate', 'updatedAt']) || archiveAllowed('workbooks');
+      allow delete: if false;
+    }
+    match /facilities/{id} {
+      allow read: if canRead('facilities', resource.data);
+      allow create: if createAllowed('facilities');
+      allow update: if isAdmin() || scopedStaffEdit('facilities', ['itemDescription', 'category', 'roomZone', 'quantity', 'condition', 'maintenanceNotes', 'updatedAt']) || archiveAllowed('facilities');
+      allow delete: if false;
+    }
+
+    match /vault_access_logs/{logId} {
+      allow read: if isAdmin();
+      allow create: if signedIn() && request.resource.data.actorUid == request.auth.uid && request.resource.data.actorEmail == request.auth.token.email && ((isAdmin() && request.resource.data.actorRole == 'SUPER_ADMIN') || (isStaff() && request.resource.data.actorRole == 'STAFF')) && request.resource.data.keys().hasOnly(['actorUid', 'actorEmail', 'actorRole', 'credentialId', 'platform', 'loginEmail', 'timestamp']);
+      allow update, delete: if false;
+    }
+    match /audit_logs/{logId} {
+      allow read: if signedIn();
+      allow create: if signedIn();
+      allow update, delete: if false;
+    }
+  }
+}

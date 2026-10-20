@@ -1,0 +1,42 @@
+{
+  "name": "basechan-asset-manager",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "dev:e2e": "cross-env NEXT_PUBLIC_E2E_AUTH_EMULATOR=true next dev --port 3100",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint",
+    "typecheck": "tsc --noEmit",
+    "test:rules": "firebase emulators:exec --project basechan-am --only firestore \"vitest run tests/firestore.rules.test.ts\"",
+    "test:e2e": "firebase emulators:exec --project basechan-am --only auth,firestore \"playwright test\"",
+    "test": "npm run test:rules && npm run test:e2e"
+  },
+  "dependencies": {
+    "clsx": "^2.1.1",
+    "firebase": "^10.14.1",
+    "lucide-react": "^0.453.0",
+    "next": "14.2.15",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "tailwind-merge": "^2.5.4",
+    "xlsx": "^0.18.5"
+  },
+  "devDependencies": {
+    "@firebase/rules-unit-testing": "^3.0.4",
+    "@playwright/test": "^1.63.0",
+    "@types/node": "^20.17.0",
+    "@types/react": "^18.3.11",
+    "@types/react-dom": "^18.3.1",
+    "autoprefixer": "^10.6.1",
+    "cross-env": "^10.1.0",
+    "eslint": "^8.57.1",
+    "eslint-config-next": "14.2.15",
+    "firebase-tools": "^15.32.1",
+    "postcss": "^8.4.47",
+    "tailwindcss": "^3.4.14",
+    "typescript": "^5.6.3",
+    "vitest": "^2.1.9"
+  }
+}
