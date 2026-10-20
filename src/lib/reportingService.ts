@@ -238,3 +238,60 @@ export async function fetchUserMonthlyPackagesHistory(userId: string): Promise<M
     return [];
   }
 }
+
+/**
+ * Grants a late submission unlock for a staff member for a specific week.
+ */
+export async function grantLateUnlock(
+  userId: string,
+  year: number,
+  weekNumber: number,
+  adminUid: string
+): Promise<void> {
+  const weekIdentifier = `${year}_W${String(weekNumber).padStart(2, "0")}`;
+  const requestId = `${userId}_${weekIdentifier}`;
+  const docRef = doc(db, "lateUnlockRequests", requestId);
+
+  // Expiration set to 24 hours from grant time
+  const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000);
+
+  await setDoc(
+    docRef,
+    {
+      userId,
+      weekIdentifier,
+      grantedBy: adminUid,
+      grantedAt: serverTimestamp(),
+      expiresAt,
+      status: "ACTIVE",
+    },
+    { merge: true }
+  );
+
+  // Also update report status if document exists
+  const reportDocId = `${userId}_${weekIdentifier}`;
+  const reportRef = doc(db, "weeklyReports", reportDocId);
+  await setDoc(reportRef, { status: "LATE_UNLOCKED", updatedAt: serverTimestamp() }, { merge: true });
+}
+
+/**
+ * Fetches all weekly report submissions for a specific week across all staff.
+ */
+export async function fetchAllWeeklyReportsForWeek(
+  year: number,
+  weekNumber: number
+): Promise<WeeklyReport[]> {
+  const { collection, query, where, getDocs } = await import("firebase/firestore");
+  try {
+    const q = query(
+      collection(db, "weeklyReports"),
+      where("year", "==", year),
+      where("weekNumber", "==", weekNumber)
+    );
+    const snap = await getDocs(q);
+    return snap.docs.map((doc) => ({ id: doc.id, ...doc.data() } as WeeklyReport));
+  } catch (err) {
+    console.warn(`Could not fetch all weekly reports for ${year} W${weekNumber}:`, err);
+    return [];
+  }
+}
