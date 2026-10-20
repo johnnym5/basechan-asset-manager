@@ -273,8 +273,8 @@ export default function Home() {
     if (!userProfile) throw new Error("Sign in again to save your welcome progress.");
     await setDoc(doc(db, "users", userProfile.uid), { onboardingCompletedAt: serverTimestamp() }, { merge: true });
   };
-  const recordsByResource: Record<ResourceKey, any[]> = { staff_inventory: staff, physical_assets: assets, digital_credentials: credentials, workbooks, facilities };
-  const setRecordsByResource: Record<ResourceKey, (rows: any[]) => void> = { staff_inventory: setStaff, physical_assets: setAssets, digital_credentials: setCredentials, workbooks: setWorkbooks, facilities: setFacilities };
+  const recordsByResource: Record<ResourceKey, any[]> = { staff_inventory: staff, physical_assets: assets, digital_credentials: credentials, workbooks, facilities, reporting: [] };
+  const setRecordsByResource: Record<ResourceKey, (rows: any[]) => void> = { staff_inventory: setStaff, physical_assets: setAssets, digital_credentials: setCredentials, workbooks: setWorkbooks, facilities: setFacilities, reporting: () => {} };
   const saveRecords = async (resource: ResourceKey, ids: string[], patch: Record<string, any>, creating = false) => {
     const rows = recordsByResource[resource];
     const targets = creating ? [null] : ids.map((id) => rows.find((row) => row.id === id)).filter(Boolean);
@@ -437,6 +437,7 @@ export default function Home() {
     digital_credentials: [{ key: "platform", label: "Platform", required: true }, { key: "loginEmail", label: "Login email", type: "email", required: true }, { key: "subAgentHandleId", label: "Handle ID" }, { key: "assignedUser", label: "Assigned user" }, { key: "assignedUserEmail", label: "Assigned user email", type: "email" }, { key: "assignedUserBranch", label: "Assigned branch" }, { key: "userRole", label: "User role" }, { key: "vaultStatus", label: "Vault status", type: "select", options: ["SECURED", "UNRESTRICTED"] }, { key: "rawPass", label: "Secret", type: "password" }],
     workbooks: [{ key: "title", label: "Title", required: true }, { key: "businessFunction", label: "Business function" }, { key: "cloudStorageUrl", label: "Cloud URL", required: true }, { key: "primaryOwner", label: "Primary owner", required: true }, { key: "primaryOwnerEmail", label: "Owner email", type: "email" }, { key: "primaryOwnerBranch", label: "Owner branch" }, { key: "department", label: "Department", required: true }, { key: "accessPermissions", label: "Access", type: "select", options: ["ALL", "RESTRICTED"] }, { key: "lastAuditDate", label: "Last audit date", type: "date" }],
     facilities: [{ key: "branch", label: "Branch", required: true }, { key: "itemDescription", label: "Item description", required: true }, { key: "category", label: "Category", type: "select", options: ["FURNITURE", "HARDWARE", "NETWORKING"] }, { key: "roomZone", label: "Room / zone" }, { key: "quantity", label: "Quantity", type: "number", required: true }, { key: "condition", label: "Condition", required: true }, { key: "assignedOrShared", label: "Allocation" }, { key: "assignedOrSharedEmail", label: "Assignee email", type: "email" }, { key: "assignedOrSharedBranch", label: "Assignee branch" }, { key: "maintenanceNotes", label: "Maintenance notes", type: "textarea" }],
+    reporting: [],
   };
 
   // Compute Missing Details Alerts dynamically

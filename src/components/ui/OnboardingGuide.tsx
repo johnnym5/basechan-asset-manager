@@ -15,6 +15,7 @@ const descriptions: Record<TabKey, { title: string; description: string }> = {
   workbooks: { title: "Workbooks", description: "Find managed files and links. Editing and broader record access depend on your administrator-granted scope." },
   facilities: { title: "Office & Facilities", description: "Review branch facilities and infrastructure that your account is permitted to see." },
   staff: { title: "Staff Directory", description: "Find staff and their assigned equipment when directory access is enabled for your account." },
+  reporting: { title: "Staff Reports", description: "Submit weekly reports, compare up to 4 weeks of metrics side-by-side, and view monthly summary packages." },
   ingestion: { title: "Excel Import", description: "Administrators review a spreadsheet preview before importing validated inventory changes." },
   stocktake: { title: "Stocktake", description: "Record physical checks for an assigned verification round. Administrators create rounds and review discrepancies." },
   tasks: { title: "Task Inbox", description: "Track repair requests, handovers, verification work, and other actions assigned to you." },

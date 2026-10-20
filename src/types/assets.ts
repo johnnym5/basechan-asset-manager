@@ -1,5 +1,5 @@
 export type UserRole = "SUPER_ADMIN" | "STAFF" | "UNAUTHORIZED";
-export type ResourceKey = "staff_inventory" | "physical_assets" | "digital_credentials" | "workbooks" | "facilities";
+export type ResourceKey = "staff_inventory" | "physical_assets" | "digital_credentials" | "workbooks" | "facilities" | "reporting";
 export interface WorkspaceLink {
   id: string;
   title: string;

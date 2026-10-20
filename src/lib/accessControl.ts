@@ -61,7 +61,7 @@ export function canReadRecord(
 }
 
 export type PageAccess = Record<
-  "overview" | "hardware" | "auditor" | "credentials" | "workbooks" | "facilities" | "staff" | "ingestion" | "stocktake" | "tasks" | "workspace",
+  "overview" | "hardware" | "auditor" | "credentials" | "workbooks" | "facilities" | "staff" | "ingestion" | "stocktake" | "tasks" | "workspace" | "reporting",
   boolean
 >;
 
@@ -73,7 +73,7 @@ export function accessiblePages(
   if (profile.role === "SUPER_ADMIN") {
     return {
       overview: true, hardware: true, auditor: true, credentials: true, workbooks: true,
-      facilities: true, staff: true, ingestion: true, stocktake: true, tasks: true, workspace: true,
+      facilities: true, staff: true, ingestion: true, stocktake: true, tasks: true, workspace: true, reporting: true,
     };
   }
   const canRead = (resource: ResourceKey) => canPerform(profile, grant, resource, "read");
@@ -89,6 +89,7 @@ export function accessiblePages(
     stocktake: hasAssignedStocktake,
     tasks: true,
     workspace: true,
+    reporting: true,
   };
 }
 

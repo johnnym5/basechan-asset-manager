@@ -18,6 +18,7 @@ import {
   ClipboardCheck,
   Inbox,
   BriefcaseBusiness,
+  FileText,
 } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 import { PageAccess } from "@/lib/accessControl";
@@ -33,7 +34,8 @@ export type TabKey =
   | "ingestion"
   | "stocktake"
   | "tasks"
-  | "workspace";
+  | "workspace"
+  | "reporting";
 
 interface SidebarProps {
   activeTab: TabKey;
@@ -62,6 +64,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeTab, onSelectTab, missin
     { key: "workbooks" as TabKey, label: "Data & Workbooks", icon: FileSpreadsheet },
     { key: "facilities" as TabKey, label: "Office & Facilities", icon: Building2 },
     { key: "staff" as TabKey, label: "Staff Directory", icon: Users },
+    { key: "reporting" as TabKey, label: "Staff Reports", icon: FileText },
     { key: "tasks" as TabKey, label: "Task Inbox", icon: Inbox, badge: openTaskCount || undefined, badgeColor: "bg-blue-100 text-blue-800 border-blue-200" },
     { key: "workspace" as TabKey, label: "Workspace Links", icon: BriefcaseBusiness },
   ];
