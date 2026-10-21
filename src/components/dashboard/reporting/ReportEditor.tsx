@@ -4,8 +4,10 @@ import React, { useEffect, useState } from "react";
 import {
   AlertCircle,
   Calendar,
+  Check,
   CheckCircle2,
   Columns,
+  Edit2,
   Lock,
   Plus,
   Save,
@@ -45,6 +47,74 @@ export function ReportEditor({ userId, userName, userEmail, isAdmin }: Props) {
   const [activeCategory, setActiveCategory] = useState<string>("B2C Direct");
   const [newCategoryInput, setNewCategoryInput] = useState("");
   const [showAddCategory, setShowAddCategory] = useState(false);
+
+  // Rename & Delete Category States
+  const [editingCategory, setEditingCategory] = useState<string | null>(null);
+  const [editCategoryInput, setEditCategoryInput] = useState("");
+
+  // Load persisted categories for user from localStorage
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    try {
+      const saved = localStorage.getItem(`reporting_categories_${userId}`);
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          setCategories(parsed);
+          if (!parsed.includes(activeCategory)) {
+            setActiveCategory(parsed[0]);
+          }
+        }
+      }
+    } catch (e) {
+      console.warn("Could not load categories from localStorage:", e);
+    }
+  }, [userId]);
+
+  const updateCategories = (updatedCategories: string[]) => {
+    setCategories(updatedCategories);
+    if (typeof window !== "undefined") {
+      try {
+        localStorage.setItem(`reporting_categories_${userId}`, JSON.stringify(updatedCategories));
+      } catch (e) {
+        console.warn("Could not persist categories to localStorage:", e);
+      }
+    }
+  };
+
+  const handleStartRenameCategory = (cat: string) => {
+    setEditingCategory(cat);
+    setEditCategoryInput(cat);
+  };
+
+  const handleSaveRenameCategory = (oldCat: string) => {
+    const trimmed = editCategoryInput.trim();
+    if (!trimmed || trimmed === oldCat) {
+      setEditingCategory(null);
+      return;
+    }
+    const next = categories.map((c) => (c === oldCat ? trimmed : c));
+    updateCategories(next);
+    if (activeCategory === oldCat) {
+      setActiveCategory(trimmed);
+    }
+    setEditingCategory(null);
+  };
+
+  const handleDeleteCategory = (catToDelete: string) => {
+    if (categories.length <= 1) {
+      alert("You must keep at least one report category.");
+      return;
+    }
+    if (!window.confirm(`Delete category "${catToDelete}"?`)) {
+      return;
+    }
+    const next = categories.filter((c) => c !== catToDelete);
+    updateCategories(next);
+    if (activeCategory === catToDelete) {
+      setActiveCategory(next[0] || "General Operations");
+    }
+  };
 
   const [template, setTemplate] = useState<ReportSectionDef[]>([]);
   const [report, setReport] = useState<WeeklyReport | null>(null);
@@ -308,20 +378,86 @@ export function ReportEditor({ userId, userName, userEmail, isAdmin }: Props) {
           <span className="text-xs font-bold text-[var(--text-muted)] uppercase tracking-wider px-2">
             Report Category:
           </span>
-          {categories.map((cat) => (
-            <button
-              key={cat}
-              type="button"
-              onClick={() => setActiveCategory(cat)}
-              className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all ${
-                activeCategory === cat
-                  ? "bg-blue-600 text-white shadow-sm"
-                  : "bg-[var(--bg-muted)]/60 text-[var(--text-muted)] hover:text-[var(--text-primary)]"
-              }`}
-            >
-              {cat}
-            </button>
-          ))}
+          {categories.map((cat) => {
+            const isSelected = activeCategory === cat;
+            const isEditing = editingCategory === cat;
+
+            if (isEditing) {
+              return (
+                <div key={cat} className="flex items-center gap-1">
+                  <input
+                    type="text"
+                    value={editCategoryInput}
+                    onChange={(e) => setEditCategoryInput(e.target.value)}
+                    className="rounded-lg border border-blue-500 bg-[var(--bg-surface)] px-2.5 py-1 text-xs font-semibold focus:outline-none"
+                    autoFocus
+                  />
+                  <button
+                    type="button"
+                    onClick={() => handleSaveRenameCategory(cat)}
+                    className="p-1.5 rounded bg-blue-600 text-white hover:bg-blue-700"
+                    title="Save Name"
+                  >
+                    <Check className="h-3.5 w-3.5" />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setEditingCategory(null)}
+                    className="px-2 py-1 text-xs text-[var(--text-muted)]"
+                  >
+                    Cancel
+                  </button>
+                </div>
+              );
+            }
+
+            return (
+              <div
+                key={cat}
+                className={`group inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition-all ${
+                  isSelected
+                    ? "bg-blue-600 text-white shadow-sm"
+                    : "bg-[var(--bg-muted)]/60 text-[var(--text-muted)] hover:text-[var(--text-primary)]"
+                }`}
+              >
+                <button
+                  type="button"
+                  onClick={() => setActiveCategory(cat)}
+                  className="focus:outline-none cursor-pointer"
+                >
+                  {cat}
+                </button>
+
+                {/* Edit & Delete Action Icons */}
+                <div className="flex items-center gap-1 opacity-70 hover:opacity-100 transition-opacity">
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleStartRenameCategory(cat);
+                    }}
+                    className="p-0.5 rounded hover:bg-white/20 text-slate-300 hover:text-white"
+                    title="Rename Category"
+                  >
+                    <Edit2 className="h-3 w-3" />
+                  </button>
+                  {categories.length > 1 && (
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleDeleteCategory(cat);
+                      }}
+                      className="p-0.5 rounded hover:bg-rose-500/30 text-rose-300 hover:text-rose-100"
+                      title="Delete Category"
+                    >
+                      <Trash2 className="h-3 w-3" />
+                    </button>
+                  )}
+                </div>
+              </div>
+            );
+          })}
 
           {!showAddCategory ? (
             <button
@@ -346,7 +482,7 @@ export function ReportEditor({ userId, userName, userEmail, isAdmin }: Props) {
                   if (newCategoryInput.trim()) {
                     const newCat = newCategoryInput.trim();
                     if (!categories.includes(newCat)) {
-                      setCategories((prev) => [...prev, newCat]);
+                      updateCategories([...categories, newCat]);
                     }
                     setActiveCategory(newCat);
                     setNewCategoryInput("");
