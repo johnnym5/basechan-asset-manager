@@ -11,6 +11,7 @@ import {
   AlertTriangle,
   Building2,
   FileSpreadsheet,
+  FileText,
   ArrowUpRight,
   ShieldCheck,
   CheckCircle2,
@@ -99,7 +100,7 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({
       {workspaceLinks.filter((link) => workspaceFavorites.includes(link.id)).length > 0 && <section className="space-y-3"><div className="flex items-center justify-between"><div><h3 className="text-lg font-bold text-[var(--text-primary)]">Your Workspace</h3><p className="text-xs text-[var(--text-muted)]">Favourite software and tools, ready to open.</p></div><button onClick={() => onNavigateTab("workspace")} className="text-xs font-semibold text-blue-600">All workspace links <ArrowUpRight className="inline h-3 w-3" /></button></div><WorkspaceCards links={workspaceLinks.filter((link) => workspaceFavorites.includes(link.id))} favorites={workspaceFavorites} onToggleFavorite={onToggleWorkspaceFavorite} /></section>}
 
       {/* KPI Cards Grid */}
-      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+      <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-3">
         <div
           onClick={() => onNavigateTab("hardware")}
           className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm hover:border-blue-400 transition-all cursor-pointer group"
@@ -140,6 +141,20 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({
           </div>
           <div className="text-2xl font-extrabold text-slate-900">{credentials.length}</div>
           <div className="text-xs text-slate-500 mt-1">Secured Accounts</div>
+        </div>
+
+        <div
+          onClick={() => onNavigateTab("reporting")}
+          className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm hover:border-teal-400 transition-all cursor-pointer group"
+        >
+          <div className="flex items-center justify-between mb-3">
+            <div className="p-2 rounded-lg bg-teal-50 text-teal-600 group-hover:bg-teal-600 group-hover:text-white transition-colors">
+              <FileText className="w-4 h-4" />
+            </div>
+            <span className="text-[10px] font-bold text-slate-400 uppercase">Reports</span>
+          </div>
+          <div className="text-2xl font-extrabold text-teal-700">Active</div>
+          <div className="text-xs text-slate-500 mt-1">Staff Reporting System</div>
         </div>
 
         <div

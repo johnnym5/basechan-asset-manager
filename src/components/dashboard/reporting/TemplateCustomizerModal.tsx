@@ -27,6 +27,135 @@ interface Props {
   onTemplateSaved?: () => void;
 }
 
+// Sub-component for adding columns to a section
+function AddColumnInlineForm({
+  onAddColumn,
+}: {
+  onAddColumn: (label: string, type: ColumnType) => void;
+}) {
+  const [label, setLabel] = useState("");
+  const [type, setType] = useState<ColumnType>("text");
+  const [open, setOpen] = useState(false);
+
+  if (!open) {
+    return (
+      <button
+        type="button"
+        onClick={() => setOpen(true)}
+        className="inline-flex items-center gap-1 text-[11px] font-semibold text-blue-600 dark:text-blue-400 hover:underline pt-1"
+      >
+        <Plus className="h-3 w-3" />
+        Add Column Header
+      </button>
+    );
+  }
+
+  const handleAdd = () => {
+    if (label.trim()) {
+      onAddColumn(label.trim(), type);
+      setLabel("");
+      setOpen(false);
+    }
+  };
+
+  return (
+    <div className="flex items-center gap-2 pt-1 flex-wrap">
+      <input
+        type="text"
+        placeholder="Column Title (e.g. Cost)"
+        value={label}
+        onChange={(e) => setLabel(e.target.value)}
+        className="rounded border border-[var(--border)] bg-[var(--bg-surface)] px-2 py-1 text-xs font-medium focus:outline-none"
+      />
+      <select
+        value={type}
+        onChange={(e) => setType(e.target.value as ColumnType)}
+        className="rounded border border-[var(--border)] bg-[var(--bg-surface)] px-2 py-1 text-xs font-medium focus:outline-none"
+      >
+        <option value="text">Text</option>
+        <option value="number">Number</option>
+        <option value="currency">Currency ($)</option>
+        <option value="date">Date</option>
+      </select>
+      <button
+        type="button"
+        onClick={handleAdd}
+        disabled={!label.trim()}
+        className="px-2.5 py-1 rounded bg-blue-600 text-white text-xs font-semibold disabled:opacity-50"
+      >
+        Add
+      </button>
+      <button
+        type="button"
+        onClick={() => setOpen(false)}
+        className="px-2 py-1 text-xs text-[var(--text-muted)] hover:text-[var(--text-primary)]"
+      >
+        Cancel
+      </button>
+    </div>
+  );
+}
+
+// Sub-component for adding default pre-filled row items to a section
+function AddRowItemInlineForm({
+  firstColLabel,
+  onAddRowItem,
+}: {
+  firstColLabel: string;
+  onAddRowItem: (itemTitle: string) => void;
+}) {
+  const [itemTitle, setItemTitle] = useState("");
+  const [open, setOpen] = useState(false);
+
+  if (!open) {
+    return (
+      <button
+        type="button"
+        onClick={() => setOpen(true)}
+        className="inline-flex items-center gap-1 text-[11px] font-semibold text-blue-600 dark:text-blue-400 hover:underline pt-1"
+      >
+        <Plus className="h-3 w-3" />
+        Add Pre-filled Default Row ({firstColLabel})
+      </button>
+    );
+  }
+
+  const handleAdd = () => {
+    if (itemTitle.trim()) {
+      onAddRowItem(itemTitle.trim());
+      setItemTitle("");
+      setOpen(false);
+    }
+  };
+
+  return (
+    <div className="flex items-center gap-2 pt-1 flex-wrap">
+      <input
+        type="text"
+        placeholder={`Item Name (e.g. ${firstColLabel})`}
+        value={itemTitle}
+        onChange={(e) => setItemTitle(e.target.value)}
+        className="rounded border border-[var(--border)] bg-[var(--bg-surface)] px-2.5 py-1 text-xs font-medium focus:outline-none"
+      />
+      <button
+        type="button"
+        onClick={handleAdd}
+        disabled={!itemTitle.trim()}
+        className="px-2.5 py-1 rounded bg-blue-600 text-white text-xs font-semibold disabled:opacity-50"
+      >
+        Add Row Item
+      </button>
+      <button
+        type="button"
+        onClick={() => setOpen(false)}
+        className="px-2 py-1 text-xs text-[var(--text-muted)] hover:text-[var(--text-primary)]"
+      >
+        Cancel
+      </button>
+    </div>
+  );
+}
+
 export function TemplateCustomizerModal({
   userId,
   userEmail,
@@ -432,135 +561,6 @@ export function TemplateCustomizerModal({
           </button>
         </footer>
       </div>
-    </div>
-  );
-}
-
-// Sub-component for adding columns to a section
-function AddColumnInlineForm({
-  onAddColumn,
-}: {
-  onAddColumn: (label: string, type: ColumnType) => void;
-}) {
-  const [label, setLabel] = useState("");
-  const [type, setType] = useState<ColumnType>("text");
-  const [open, setOpen] = useState(false);
-
-  if (!open) {
-    return (
-      <button
-        type="button"
-        onClick={() => setOpen(true)}
-        className="inline-flex items-center gap-1 text-[11px] font-semibold text-blue-600 dark:text-blue-400 hover:underline pt-1"
-      >
-        <Plus className="h-3 w-3" />
-        Add Column Header
-      </button>
-    );
-  }
-
-  const handleAdd = () => {
-    if (label.trim()) {
-      onAddColumn(label.trim(), type);
-      setLabel("");
-      setOpen(false);
-    }
-  };
-
-  return (
-    <div className="flex items-center gap-2 pt-1 flex-wrap">
-      <input
-        type="text"
-        placeholder="Column Title (e.g. Cost)"
-        value={label}
-        onChange={(e) => setLabel(e.target.value)}
-        className="rounded border border-[var(--border)] bg-[var(--bg-surface)] px-2 py-1 text-xs font-medium focus:outline-none"
-      />
-      <select
-        value={type}
-        onChange={(e) => setType(e.target.value as ColumnType)}
-        className="rounded border border-[var(--border)] bg-[var(--bg-surface)] px-2 py-1 text-xs font-medium focus:outline-none"
-      >
-        <option value="text">Text</option>
-        <option value="number">Number</option>
-        <option value="currency">Currency ($)</option>
-        <option value="date">Date</option>
-      </select>
-      <button
-        type="button"
-        onClick={handleAdd}
-        disabled={!label.trim()}
-        className="px-2.5 py-1 rounded bg-blue-600 text-white text-xs font-semibold disabled:opacity-50"
-      >
-        Add
-      </button>
-      <button
-        type="button"
-        onClick={() => setOpen(false)}
-        className="px-2 py-1 text-xs text-[var(--text-muted)] hover:text-[var(--text-primary)]"
-      >
-        Cancel
-      </button>
-    </div>
-  );
-}
-
-// Sub-component for adding default pre-filled row items to a section
-function AddRowItemInlineForm({
-  firstColLabel,
-  onAddRowItem,
-}: {
-  firstColLabel: string;
-  onAddRowItem: (itemTitle: string) => void;
-}) {
-  const [itemTitle, setItemTitle] = useState("");
-  const [open, setOpen] = useState(false);
-
-  if (!open) {
-    return (
-      <button
-        type="button"
-        onClick={() => setOpen(true)}
-        className="inline-flex items-center gap-1 text-[11px] font-semibold text-blue-600 dark:text-blue-400 hover:underline pt-1"
-      >
-        <Plus className="h-3 w-3" />
-        Add Pre-filled Default Row ({firstColLabel})
-      </button>
-    );
-  }
-
-  const handleAdd = () => {
-    if (itemTitle.trim()) {
-      onAddRowItem(itemTitle.trim());
-      setItemTitle("");
-      setOpen(false);
-    }
-  };
-
-  return (
-    <div className="flex items-center gap-2 pt-1 flex-wrap">
-      <input
-        type="text"
-        placeholder={`Item Name (e.g. ${firstColLabel})`}
-        value={itemTitle}
-        onChange={(e) => setItemTitle(e.target.value)}
-        className="rounded border border-[var(--border)] bg-[var(--bg-surface)] px-2.5 py-1 text-xs font-medium focus:outline-none"
-      />
-      <button
-        type="button"
-        onClick={handleAdd}
-        disabled={!itemTitle.trim()}
-        className="px-2.5 py-1 rounded bg-blue-600 text-white text-xs font-semibold disabled:opacity-50"
-      >
-        Add Row Item
-      </button>
-      <button
-        type="button"
-        onClick={() => setOpen(false)}
-        className="px-2 py-1 text-xs text-[var(--text-muted)] hover:text-[var(--text-primary)]"
-      >
-        Cancel
-      </button>
     </div>
   );
 }

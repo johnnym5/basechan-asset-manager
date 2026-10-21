@@ -21,6 +21,7 @@ import {
 import {
   fetchMergedTemplate,
   fetchWeeklyReport,
+  getReportDocId,
   saveWeeklyReportDraft,
   submitWeeklyReport,
 } from "@/lib/reportingService";
@@ -35,6 +36,15 @@ interface Props {
 
 export function ReportEditor({ userId, userName, userEmail, isAdmin }: Props) {
   const [weekDetails, setWeekDetails] = useState(getISOWeekDetails());
+  const [categories, setCategories] = useState<string[]>([
+    "B2C Direct",
+    "B2B Partnerships",
+    "General Operations",
+  ]);
+  const [activeCategory, setActiveCategory] = useState<string>("B2C Direct");
+  const [newCategoryInput, setNewCategoryInput] = useState("");
+  const [showAddCategory, setShowAddCategory] = useState(false);
+
   const [template, setTemplate] = useState<ReportSectionDef[]>([]);
   const [report, setReport] = useState<WeeklyReport | null>(null);
   const [reportData, setReportData] = useState<Record<string, any[]>>({});
@@ -44,7 +54,7 @@ export function ReportEditor({ userId, userName, userEmail, isAdmin }: Props) {
   const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
   const [showCustomizer, setShowCustomizer] = useState(false);
 
-  // Load template & weekly report on mount or when week/user changes
+  // Load template & weekly report on mount or when week/user/category changes
   useEffect(() => {
     async function loadReportAndTemplate() {
       setLoading(true);
@@ -52,7 +62,7 @@ export function ReportEditor({ userId, userName, userEmail, isAdmin }: Props) {
       try {
         const [mergedTemp, existingReport] = await Promise.all([
           fetchMergedTemplate(userId),
-          fetchWeeklyReport(userId, weekDetails.year, weekDetails.weekNumber),
+          fetchWeeklyReport(userId, weekDetails.year, weekDetails.weekNumber, activeCategory),
         ]);
 
         setTemplate(existingReport?.snapshotTemplate || mergedTemp);
@@ -84,7 +94,7 @@ export function ReportEditor({ userId, userName, userEmail, isAdmin }: Props) {
     }
 
     loadReportAndTemplate();
-  }, [userId, weekDetails]);
+  }, [userId, weekDetails, activeCategory]);
 
   const createEmptyRow = (columns: ReportSectionDef["columns"]) => {
     const row: Record<string, any> = {};

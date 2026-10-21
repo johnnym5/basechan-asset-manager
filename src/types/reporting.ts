@@ -17,6 +17,7 @@ export interface ReportSectionDef {
 
 export interface ReportTemplate {
   userId: string | null; // null for global admin template
+  reportCategory?: string; // e.g. "B2C Direct", "B2B Partnerships", "General Operations"
   sections: ReportSectionDef[];
   updatedAt?: any;
   updatedBy?: string;
@@ -26,6 +27,7 @@ export interface WeeklyReport {
   id: string;
   userId: string;
   userName: string;
+  reportCategory?: string; // e.g. "B2C Direct", "B2B Partnerships", "General Operations"
   year: number;
   month: number;
   weekNumber: number;
@@ -42,6 +44,7 @@ export interface MonthlyPackage {
   id: string;
   userId: string;
   userName: string;
+  reportCategory?: string;
   year: number;
   month: number;
   compiledAt: any;

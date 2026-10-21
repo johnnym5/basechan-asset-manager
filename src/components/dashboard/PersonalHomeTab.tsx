@@ -1,7 +1,5 @@
-"use client";
-
 import React from "react";
-import { ArrowUpRight, ClipboardList, KeyRound, Laptop, MapPin, Star, Wrench } from "lucide-react";
+import { ArrowUpRight, ClipboardList, KeyRound, Laptop, MapPin, Star, Wrench, FileText } from "lucide-react";
 import { DigitalCredential, InboxTask, PhysicalAsset, WorkspaceLink } from "@/types/assets";
 import { WorkspaceCards } from "@/components/dashboard/WorkspaceTab";
 import { TabKey } from "@/components/layout/Sidebar";
@@ -32,7 +30,7 @@ export function PersonalHomeTab({ displayName, branch, department, assets, crede
         <div>
           <p className="text-xs font-semibold uppercase tracking-[.18em] text-sky-200">Your Basechan workspace</p>
           <h2 className="mt-2 text-2xl font-bold tracking-tight sm:text-3xl">Welcome back, {firstName}</h2>
-          <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-200">Your assigned equipment, account access, tasks, and favourite tools are gathered here for you.</p>
+          <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-200">Your assigned equipment, account access, tasks, reports, and favourite tools are gathered here for you.</p>
           <div className="mt-3 flex flex-wrap gap-2 text-xs text-slate-200">
             {branch && <span className="inline-flex items-center gap-1 rounded-full border border-white/15 bg-white/10 px-2.5 py-1"><MapPin className="h-3 w-3" />{branch}</span>}
             {department && <span className="rounded-full border border-white/15 bg-white/10 px-2.5 py-1">{department}</span>}
@@ -44,22 +42,25 @@ export function PersonalHomeTab({ displayName, branch, department, assets, crede
       </div>
     </section>
 
-    <section className="grid grid-cols-2 gap-3 sm:grid-cols-4 sm:gap-4" aria-label="Your work at a glance">
-      <button onClick={() => onNavigate("hardware")} className="rounded-xl border border-[var(--border)] bg-[var(--bg-surface)] p-4 text-left shadow-sm transition hover:-translate-y-0.5 hover:border-blue-400">
+    <section className="grid grid-cols-2 gap-3 sm:grid-cols-5 sm:gap-4" aria-label="Your work at a glance">
+      <button onClick={() => onNavigate("hardware")} className="rounded-xl border border-[var(--border)] bg-[var(--bg-surface)] p-4 text-left shadow-sm transition hover:-translate-y-0.5 hover:border-blue-400 cursor-pointer">
         <Laptop className="h-5 w-5 text-blue-500" /><strong className="mt-3 block text-2xl text-[var(--text-primary)]">{assets.length}</strong><span className="text-xs text-[var(--text-muted)]">My active assets</span>
       </button>
-      <button onClick={() => onNavigate("credentials")} className="rounded-xl border border-[var(--border)] bg-[var(--bg-surface)] p-4 text-left shadow-sm transition hover:-translate-y-0.5 hover:border-emerald-400">
+      <button onClick={() => onNavigate("credentials")} className="rounded-xl border border-[var(--border)] bg-[var(--bg-surface)] p-4 text-left shadow-sm transition hover:-translate-y-0.5 hover:border-emerald-400 cursor-pointer">
         <KeyRound className="h-5 w-5 text-emerald-500" /><strong className="mt-3 block text-2xl text-[var(--text-primary)]">{credentials.length}</strong><span className="text-xs text-[var(--text-muted)]">My accounts</span>
       </button>
-      <button onClick={() => onNavigate("tasks")} className="rounded-xl border border-[var(--border)] bg-[var(--bg-surface)] p-4 text-left shadow-sm transition hover:-translate-y-0.5 hover:border-amber-400">
+      <button onClick={() => onNavigate("tasks")} className="rounded-xl border border-[var(--border)] bg-[var(--bg-surface)] p-4 text-left shadow-sm transition hover:-translate-y-0.5 hover:border-amber-400 cursor-pointer">
         <ClipboardList className="h-5 w-5 text-amber-500" /><strong className="mt-3 block text-2xl text-[var(--text-primary)]">{openTasks.length}</strong><span className="text-xs text-[var(--text-muted)]">Open tasks</span>
       </button>
-      <button onClick={() => onNavigate("workspace")} className="rounded-xl border border-[var(--border)] bg-[var(--bg-surface)] p-4 text-left shadow-sm transition hover:-translate-y-0.5 hover:border-purple-400">
+      <button onClick={() => onNavigate("reporting")} className="rounded-xl border border-[var(--border)] bg-[var(--bg-surface)] p-4 text-left shadow-sm transition hover:-translate-y-0.5 hover:border-sky-400 cursor-pointer">
+        <FileText className="h-5 w-5 text-sky-500" /><strong className="mt-3 block text-2xl text-[var(--text-primary)]">Active</strong><span className="text-xs text-[var(--text-muted)]">Weekly reports</span>
+      </button>
+      <button onClick={() => onNavigate("workspace")} className="rounded-xl border border-[var(--border)] bg-[var(--bg-surface)] p-4 text-left shadow-sm transition hover:-translate-y-0.5 hover:border-purple-400 cursor-pointer">
         <Star className="h-5 w-5 text-purple-500" /><strong className="mt-3 block text-2xl text-[var(--text-primary)]">{favoriteLinks.length}</strong><span className="text-xs text-[var(--text-muted)]">Favourite tools</span>
       </button>
     </section>
 
-    <div className="grid gap-5 lg:grid-cols-[1.2fr_.8fr]">
+    <div className="grid gap-5 lg:grid-cols-3">
       <section className="rounded-2xl border border-[var(--border)] bg-[var(--bg-surface)] p-4 shadow-sm sm:p-5">
         <div className="mb-4 flex items-center justify-between gap-3"><div><h3 className="font-bold text-[var(--text-primary)]">My assets</h3><p className="mt-1 text-xs text-[var(--text-muted)]">Check what is assigned to you or report a change.</p></div><button onClick={() => onNavigate("hardware")} className="shrink-0 text-xs font-semibold text-blue-600">View all</button></div>
         {assets.length === 0 ? <div className="rounded-xl border border-dashed border-[var(--border)] p-6 text-center"><Laptop className="mx-auto h-6 w-6 text-[var(--text-muted)]" /><p className="mt-2 text-sm font-medium text-[var(--text-primary)]">No active assets are assigned to your account.</p><p className="mt-1 text-xs text-[var(--text-muted)]">If you think something is missing, contact your administrator.</p></div> : <div className="space-y-2">{assets.slice(0, 4).map((asset) => <button key={asset.id} onClick={() => onNavigate("hardware")} className="flex w-full items-center justify-between gap-3 rounded-xl border border-[var(--border)] bg-[var(--bg-primary)] p-3 text-left transition hover:border-blue-400"><div className="min-w-0"><strong className="block truncate text-sm text-[var(--text-primary)]">{asset.makeModel}</strong><span className="mt-0.5 block truncate text-xs text-[var(--text-muted)]">{asset.tag} · {asset.category}</span></div><span className="shrink-0 rounded-full bg-emerald-500/10 px-2.5 py-1 text-[10px] font-semibold text-emerald-700 dark:text-emerald-300">{asset.condition || asset.status}</span></button>)}</div>}
@@ -68,6 +69,43 @@ export function PersonalHomeTab({ displayName, branch, department, assets, crede
       <section className="rounded-2xl border border-[var(--border)] bg-[var(--bg-surface)] p-4 shadow-sm sm:p-5">
         <div className="mb-4 flex items-center justify-between gap-3"><div><h3 className="font-bold text-[var(--text-primary)]">My task inbox</h3><p className="mt-1 text-xs text-[var(--text-muted)]">Repair updates and actions assigned to you.</p></div><button onClick={() => onNavigate("tasks")} className="shrink-0 text-xs font-semibold text-blue-600">Open inbox</button></div>
         {openTasks.length === 0 ? <div className="rounded-xl border border-dashed border-[var(--border)] p-6 text-center"><Wrench className="mx-auto h-6 w-6 text-[var(--text-muted)]" /><p className="mt-2 text-sm font-medium text-[var(--text-primary)]">You are all caught up.</p><p className="mt-1 text-xs text-[var(--text-muted)]">New requests and handovers will appear here.</p></div> : <div className="space-y-2">{openTasks.slice(0, 4).map((task) => <button key={task.id} onClick={() => onNavigate("tasks")} className="w-full rounded-xl border border-[var(--border)] bg-[var(--bg-primary)] p-3 text-left"><strong className="block text-sm text-[var(--text-primary)]">{task.title}</strong><span className="mt-1 block line-clamp-2 text-xs text-[var(--text-muted)]">{task.description || task.status.replaceAll("_", " ")}</span></button>)}</div>}
+      </section>
+
+      <section className="rounded-2xl border border-[var(--border)] bg-[var(--bg-surface)] p-4 shadow-sm sm:p-5">
+        <div className="mb-4 flex items-center justify-between gap-3">
+          <div>
+            <h3 className="font-bold text-[var(--text-primary)]">My weekly reports</h3>
+            <p className="mt-1 text-xs text-[var(--text-muted)]">Submit logs, compare 4-week history &amp; packages.</p>
+          </div>
+          <button onClick={() => onNavigate("reporting")} className="shrink-0 text-xs font-semibold text-blue-600 hover:underline flex items-center gap-1">
+            <span>Open reports</span>
+            <ArrowUpRight className="h-3 w-3" />
+          </button>
+        </div>
+
+        <div className="rounded-xl border border-[var(--border)] bg-[var(--bg-primary)] p-4 space-y-3">
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-bold text-[var(--text-primary)] flex items-center gap-1.5">
+              <FileText className="h-4 w-4 text-sky-500" />
+              <span>Weekly Reporting Cycle</span>
+            </span>
+            <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20">
+              Active Cycle
+            </span>
+          </div>
+
+          <p className="text-xs text-[var(--text-muted)] leading-relaxed">
+            Submit weekly reports by Monday. Review multi-week trend margins and monthly compiled packages.
+          </p>
+
+          <button
+            onClick={() => onNavigate("reporting")}
+            className="w-full py-2 px-3 rounded-xl bg-navy-800 hover:bg-navy-700 text-gold-400 font-bold text-xs shadow-sm transition-all flex items-center justify-center gap-1.5 cursor-pointer"
+          >
+            <FileText className="h-3.5 w-3.5" />
+            <span>Open Staff Reports System</span>
+          </button>
+        </div>
       </section>
     </div>
 

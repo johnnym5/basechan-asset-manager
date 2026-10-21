@@ -142,14 +142,28 @@ export async function fetchMergedTemplate(userId: string): Promise<ReportSection
 }
 
 /**
- * Fetches a specific weekly report for a user by year and weekNumber.
+ * Computes a unique document ID for a report by user, year, week, and category.
+ */
+export function getReportDocId(
+  userId: string,
+  year: number,
+  weekNumber: number,
+  category: string = "General Operations"
+): string {
+  const catSlug = category.toLowerCase().replace(/[^a-z0-9]/g, "_");
+  return `${userId}_${year}_W${String(weekNumber).padStart(2, "0")}_${catSlug}`;
+}
+
+/**
+ * Fetches a specific weekly report for a user by year, weekNumber, and report category.
  */
 export async function fetchWeeklyReport(
   userId: string,
   year: number,
-  weekNumber: number
+  weekNumber: number,
+  category: string = "General Operations"
 ): Promise<WeeklyReport | null> {
-  const docId = `${userId}_${year}_W${String(weekNumber).padStart(2, "0")}`;
+  const docId = getReportDocId(userId, year, weekNumber, category);
   try {
     const docRef = doc(db, "weeklyReports", docId);
     const snap = await getDoc(docRef);
