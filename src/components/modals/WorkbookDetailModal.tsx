@@ -165,7 +165,7 @@ export const WorkbookDetailModal: React.FC<WorkbookDetailModalProps> = ({
               <span className="text-[var(--text-muted)] font-medium block">Access Permissions</span>
               <span className={`inline-flex items-center gap-1 mt-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold ${
                 workbook.accessPermissions?.toUpperCase() === "ALL" || workbook.accessPermissions?.toUpperCase() === "PUBLIC"
-                  ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30"
+                  ? "bg-gold-500/10 text-gold-600 dark:text-gold-400 border border-gold-500/30"
                   : "bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/30"
               }`}>
                 {workbook.accessPermissions?.toUpperCase() === "ALL" ? <Globe className="w-3 h-3" /> : <Lock className="w-3 h-3" />}

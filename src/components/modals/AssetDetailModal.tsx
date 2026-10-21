@@ -220,7 +220,7 @@ export const AssetDetailModal: React.FC<AssetDetailModalProps> = ({
               <span className="text-[var(--text-muted)] font-medium block">Condition</span>
               <span className={`inline-block mt-1 px-3 py-0.5 rounded-full text-xs font-bold ${
                 asset.condition.toLowerCase().includes("good") || asset.condition.toLowerCase().includes("excellent")
-                  ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30"
+                  ? "bg-gold-500/10 text-gold-600 dark:text-gold-400 border border-gold-500/30"
                   : asset.condition.toLowerCase().includes("fair")
                   ? "bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/30"
                   : "bg-rose-500/10 text-rose-600 dark:text-rose-400 border border-rose-500/30"

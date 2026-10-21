@@ -159,7 +159,7 @@ export const FacilityDetailModal: React.FC<FacilityDetailModalProps> = ({
               <span className="text-[var(--text-muted)] font-medium block">Condition</span>
               <span className={`inline-block mt-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold ${
                 facility.condition.toLowerCase().includes("good") || facility.condition.toLowerCase().includes("fair")
-                  ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30"
+                  ? "bg-gold-500/10 text-gold-600 dark:text-gold-400 border border-gold-500/30"
                   : "bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/30"
               }`}>
                 {facility.condition}

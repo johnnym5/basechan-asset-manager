@@ -175,7 +175,7 @@ export const WorkbooksTab: React.FC<WorkbooksTabProps> = ({ workbooks, grant, sh
                       </span>
                       <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
                         wb.accessPermissions?.toUpperCase() === "ALL" || wb.accessPermissions?.toUpperCase() === "PUBLIC"
-                          ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20"
+                          ? "bg-gold-500/10 text-gold-600 dark:text-gold-400 border border-gold-500/30"
                           : "bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20"
                       }`}>
                         {wb.accessPermissions || "RESTRICTED"}

@@ -198,18 +198,18 @@ export const RevealPasswordModal: React.FC<RevealPasswordModalProps> = ({
                   type="text"
                   readOnly
                   value={secret || "No password stored"}
-                  className="flex-1 font-mono text-sm px-3 py-2 bg-emerald-50/50 border border-emerald-300 text-emerald-900 rounded-xl focus:outline-none"
+                  className="flex-1 font-mono text-sm px-3 py-2 bg-gold-500/10 border border-gold-500/30 text-gold-600 dark:text-gold-400 rounded-xl focus:outline-none"
                 />
                 <button
                   onClick={handleCopy}
                   className="p-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-medium flex items-center gap-1 transition-all"
                   title="Copy to clipboard"
                 >
-                  {copied ? <Check className="w-4 h-4 text-emerald-600" /> : <Copy className="w-4 h-4" />}
+                  {copied ? <Check className="w-4 h-4 text-gold-500" /> : <Copy className="w-4 h-4" />}
                 </button>
               </div>
-              <p className="text-[11px] text-emerald-700 font-medium flex items-center gap-1">
-                <Check className="w-3.5 h-3.5 text-emerald-600" />
+              <p className="text-[11px] text-gold-600 dark:text-gold-400 font-medium flex items-center gap-1">
+                <Check className="w-3.5 h-3.5 text-gold-500" />
                 Access logged to Vault Security Audit Trail.
               </p>
             </div>

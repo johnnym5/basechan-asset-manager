@@ -93,7 +93,7 @@ export const CredentialsTab: React.FC<CredentialsTabProps> = ({ credentials, gra
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h2 className="text-xl font-bold text-slate-900 tracking-tight flex items-center gap-2">
-            <KeyRound className="w-5 h-5 text-emerald-600" />
+            <KeyRound className="w-5 h-5 text-gold-500" />
             <span>Digital Accounts & Credential Vault</span>
           </h2>
           <p className="text-xs text-slate-500 mt-0.5">
@@ -140,11 +140,11 @@ export const CredentialsTab: React.FC<CredentialsTabProps> = ({ credentials, gra
       {/* Security Banner */}
       <div className="p-4 rounded-xl bg-gradient-to-r from-slate-900 to-indigo-950 text-white shadow-sm flex flex-col items-start justify-between gap-3 sm:flex-row sm:items-center">
         <div className="flex items-start gap-3">
-          <div className="p-2 rounded-lg bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
+          <div className="p-2 rounded-lg bg-gold-500/20 text-gold-300 border border-gold-500/30">
             <ShieldCheck className="w-5 h-5" />
           </div>
           <div>
-            <div className="text-xs font-bold uppercase tracking-wider text-emerald-300">Credential Access Controls Active</div>
+            <div className="text-xs font-bold uppercase tracking-wider text-gold-300">Credential Access Controls Active</div>
             <p className="text-xs text-slate-300 mt-0.5">
               Credential reads are restricted by Firestore rules. Revealing a credential requires a successful write to <span className="font-mono text-white">vault_access_logs</span>.
             </p>
@@ -189,7 +189,7 @@ export const CredentialsTab: React.FC<CredentialsTabProps> = ({ credentials, gra
                 <div
                   key={cred.id}
                   onClick={() => setSelectedCred(cred)}
-                  className="bg-[var(--bg-surface)] border border-[var(--border)] rounded-2xl p-5 shadow-sm hover:shadow-md hover:border-emerald-500/50 transition-all cursor-pointer group flex flex-col justify-between space-y-4"
+                  className="bg-[var(--bg-surface)] border border-[var(--border)] rounded-2xl p-5 shadow-sm hover:shadow-md hover:border-gold-400/80 transition-all cursor-pointer group flex flex-col justify-between space-y-4"
                 >
                   <CardRecordControls checked={selectedIds.includes(cred.id)} onSelect={() => setSelectedIds((ids) => ids.includes(cred.id) ? ids.filter((id) => id !== cred.id) : [...ids, cred.id])} label={`Select ${cred.platform}`} canEdit={canEdit} onEdit={onEdit ? () => onEdit(cred) : () => setLocalEditor(cred)} onArchive={canArchive && !showArchived ? () => onArchiveRecord?.(cred.id).catch((error) => setActionError(error.message)) : undefined} onRestore={canRestore && showArchived ? () => onRestoreRecord?.(cred.id).catch((error) => setActionError(error.message)) : undefined} archived={showArchived} />
                   {/* Top Section: Prominent User Name (Big) */}
@@ -198,13 +198,13 @@ export const CredentialsTab: React.FC<CredentialsTabProps> = ({ credentials, gra
                       <span className="text-[10px] font-semibold uppercase tracking-wider text-[var(--text-muted)]">
                         Assigned User
                       </span>
-                      <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
+                      <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-gold-500/10 text-gold-600 dark:text-gold-400 border border-gold-500/30">
                         {cred.userRole || "User"}
                       </span>
                     </div>
 
                     <h3 className={`text-base font-extrabold tracking-tight truncate ${
-                      hasUser ? "text-[var(--text-primary)] group-hover:text-emerald-600 dark:group-hover:text-emerald-400" : "text-amber-600 dark:text-amber-400 italic"
+                      hasUser ? "text-[var(--text-primary)] group-hover:text-gold-500 dark:group-hover:text-gold-400" : "text-amber-600 dark:text-amber-400 italic"
                     }`}>
                       {hasUser ? cred.assignedUser : "Unassigned / No User"}
                     </h3>
@@ -230,7 +230,7 @@ export const CredentialsTab: React.FC<CredentialsTabProps> = ({ credentials, gra
                   </div>
 
                   {/* Footer Action Indicator */}
-                  <div className="pt-2 border-t border-[var(--border)] flex items-center justify-between text-xs text-emerald-600 dark:text-emerald-400 font-semibold group-hover:underline">
+                  <div className="pt-2 border-t border-[var(--border)] flex items-center justify-between text-xs text-gold-500 dark:text-gold-400 font-semibold group-hover:underline">
                     <span className="flex items-center gap-1">
                       <Lock className="w-3 h-3" /> Click to Reveal
                     </span>

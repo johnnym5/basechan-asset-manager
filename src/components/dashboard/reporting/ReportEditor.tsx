@@ -246,7 +246,7 @@ export function ReportEditor({ userId, userName, userEmail, isAdmin }: Props) {
             </span>
 
             {isSubmitted ? (
-              <span className="flex items-center gap-1 px-3 py-1 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 font-bold text-xs border border-emerald-500/20">
+              <span className="flex items-center gap-1 px-3 py-1 rounded-full bg-gold-500/10 text-gold-600 dark:text-gold-400 font-bold text-xs border border-gold-500/30">
                 <CheckCircle2 className="h-3.5 w-3.5" />
                 SUBMITTED & FROZEN
               </span>
