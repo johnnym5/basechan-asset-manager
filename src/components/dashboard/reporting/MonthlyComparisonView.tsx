@@ -155,7 +155,7 @@ export function MonthlyComparisonView({ userId, userName }: Props) {
           <p className="text-xs text-[var(--text-muted)]">Loading monthly packages history...</p>
         ) : packagesHistory.length === 0 ? (
           <p className="text-xs text-[var(--text-muted)] italic">
-            No monthly packages compiled yet. Click "Compile Month" above to compile your first monthly report package.
+            No monthly packages compiled yet. Click &quot;Compile Month&quot; above to compile your first monthly report package.
           </p>
         ) : (
           <div className="flex flex-wrap gap-2 pt-2">
