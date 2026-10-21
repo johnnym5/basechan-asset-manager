@@ -88,10 +88,10 @@ export const AnimatedSelect: React.FC<AnimatedSelectProps> = ({
           <motion.ul
             role="listbox"
             initial={{ opacity: 0, scale: 0.95, y: -4 }}
-            animate={{ opacity: 1, scale: 1, y: 4 }}
+            animate={{ opacity: 1, scale: 1, y: 2 }}
             exit={{ opacity: 0, scale: 0.95, y: -4 }}
             transition={{ duration: 0.15, ease: [0.25, 0.1, 0.25, 1] }}
-            className="absolute left-0 right-0 z-50 mt-1 max-h-60 overflow-y-auto rounded-xl border border-[var(--border)] bg-[var(--bg-surface)] p-1 shadow-xl backdrop-blur-xl focus:outline-none"
+            className="absolute left-0 top-full z-[100] mt-1.5 min-w-full w-max max-h-60 overflow-y-auto rounded-2xl border border-[var(--border)] bg-[var(--bg-surface)] p-1.5 shadow-2xl backdrop-blur-2xl focus:outline-none space-y-0.5"
           >
             {options.map((option) => {
               const isSelected = option.value === value;

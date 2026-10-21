@@ -219,7 +219,7 @@ export const HardwareTab: React.FC<HardwareTabProps> = ({
       {/* Filter Bar */}
       <BulkActionBar count={selectedIds.length} onSelectAll={() => setSelectedIds(visibleAssets.map((row) => row.id))} onClear={() => setSelectedIds([])} onCreate={onCreate} onEdit={() => onBulkEdit?.(selectedIds.filter((id) => { const asset = visibleAssets.find((row) => row.id === id); return asset && (!isStaff || !asset.isLocked); }))} onArchive={() => onBulkArchive?.(selectedIds).then(() => setSelectedIds([])).catch((error) => setActionError(error.message))} onRestore={() => onBulkRestore?.(selectedIds).then(() => setSelectedIds([])).catch((error) => setActionError(error.message))} showArchived={showArchived} onToggleArchived={onToggleArchived} canCreate={canCreate} canEdit={canEdit && (!isStaff || selectedIds.some((id) => visibleAssets.some((asset) => asset.id === id && !asset.isLocked)))} canArchive={canArchive} canRestore={canRestore} />
       {actionError && <p role="alert" className="rounded-lg border border-rose-300 bg-rose-50 p-3 text-sm text-rose-700">{actionError}</p>}
-      <div className="bg-[var(--bg-surface)] p-3.5 rounded-xl border border-[var(--border)] shadow-sm flex flex-col md:flex-row items-stretch md:items-center gap-3">
+      <div className="relative z-20 bg-[var(--bg-surface)] p-3.5 rounded-xl border border-[var(--border)] shadow-sm flex flex-col md:flex-row items-stretch md:items-center gap-3">
         <div className="relative flex-1 w-full">
           <Search className="w-4 h-4 text-slate-400 absolute left-3 top-2.5" />
           <input
@@ -231,7 +231,7 @@ export const HardwareTab: React.FC<HardwareTabProps> = ({
           />
         </div>
 
-        <div className="grid grid-cols-1 gap-2 w-full md:flex md:w-auto md:overflow-x-auto md:pb-0">
+        <div className="grid grid-cols-1 gap-2 w-full md:flex md:w-auto flex-wrap">
           <AnimatedSelect
             value={selectedBranch}
             onChange={setSelectedBranch}

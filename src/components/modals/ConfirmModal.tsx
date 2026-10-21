@@ -1,6 +1,7 @@
 "use client";
 
-import React, { useEffect, useRef } from "react";
+import React, { useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { AnimatePresence, motion } from "framer-motion";
 import {
   MODAL_BACKDROP_VARIANTS,
@@ -56,6 +57,23 @@ export const ConfirmModal: React.FC<ConfirmModalProps> = ({
       ? "bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-500/20"
       : "bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20";
 
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  useEffect(() => {
+    if (isOpen) {
+      document.body.style.overflow = "hidden";
+    } else {
+      document.body.style.overflow = "";
+    }
+    return () => {
+      document.body.style.overflow = "";
+    };
+  }, [isOpen]);
+
   const confirmBtnBg =
     variant === "danger"
       ? "bg-rose-600 hover:bg-rose-700 text-white"
@@ -63,7 +81,9 @@ export const ConfirmModal: React.FC<ConfirmModalProps> = ({
       ? "bg-blue-600 hover:bg-blue-700 text-white"
       : "bg-amber-600 hover:bg-amber-700 text-white";
 
-  return (
+  if (!mounted) return null;
+
+  return createPortal(
     <AnimatePresence>
       {isOpen && (
         <motion.div
@@ -72,7 +92,7 @@ export const ConfirmModal: React.FC<ConfirmModalProps> = ({
           animate="visible"
           exit="exit"
           variants={MODAL_BACKDROP_VARIANTS}
-          className="fixed inset-0 z-[10000] bg-slate-950/80 backdrop-blur-md flex items-center justify-center p-4 sm:p-6"
+          className="fixed inset-0 z-[99999] bg-slate-950/80 backdrop-blur-md flex items-center justify-center p-4 sm:p-6"
           role="dialog"
           aria-modal="true"
           onClick={onCancel}
@@ -123,6 +143,7 @@ export const ConfirmModal: React.FC<ConfirmModalProps> = ({
           </motion.div>
         </motion.div>
       )}
-    </AnimatePresence>
+    </AnimatePresence>,
+    document.body
   );
 };

@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
+import { createPortal } from "react-dom";
 import { AnimatePresence, motion } from "framer-motion";
 import {
   MODAL_BACKDROP_VARIANTS,
@@ -169,6 +170,16 @@ export function TemplateCustomizerModal({
   onClose,
   onTemplateSaved,
 }: Props) {
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = "";
+    };
+  }, []);
+
   const [editMode, setEditMode] = useState<"personal" | "global_admin">(
     isAdmin ? "global_admin" : "personal"
   );
@@ -308,7 +319,9 @@ export function TemplateCustomizerModal({
     }
   };
 
-  return (
+  if (!mounted) return null;
+
+  return createPortal(
     <AnimatePresence>
       <motion.div
         key="customizer-modal-backdrop"
@@ -316,7 +329,7 @@ export function TemplateCustomizerModal({
         animate="visible"
         exit="exit"
         variants={MODAL_BACKDROP_VARIANTS}
-        className="fixed inset-0 z-[100] grid place-items-center bg-slate-950/75 p-2 backdrop-blur-sm sm:p-4"
+        className="fixed inset-0 z-[99999] grid place-items-center bg-slate-950/80 backdrop-blur-md p-2 sm:p-4"
         role="dialog"
         aria-modal="true"
         onClick={onClose}
@@ -581,6 +594,7 @@ export function TemplateCustomizerModal({
         </footer>
       </motion.div>
     </motion.div>
-    </AnimatePresence>
+    </AnimatePresence>,
+    document.body
   );
 }
