@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useMemo } from "react";
 import Image from "next/image";
+import { AnimatePresence, motion, Variants } from "framer-motion";
 import { useAuth } from "@/context/AuthContext";
 import { Navbar } from "@/components/layout/Navbar";
 import { Sidebar, TabKey } from "@/components/layout/Sidebar";
@@ -44,10 +45,67 @@ import { accessiblePages } from "@/lib/accessControl";
 import { PersonalHomeTab } from "@/components/dashboard/PersonalHomeTab";
 import { OnboardingGuide } from "@/components/ui/OnboardingGuide";
 
+const TAB_ORDER: TabKey[] = [
+  "overview",
+  "hardware",
+  "auditor",
+  "credentials",
+  "workbooks",
+  "facilities",
+  "staff",
+  "reporting",
+  "tasks",
+  "workspace",
+  "stocktake",
+  "ingestion",
+];
+
+const TAB_PAGE_VARIANTS: Variants = {
+  initial: (custom: { direction: number; isMobile: boolean }) => ({
+    opacity: 0,
+    x: custom.isMobile ? custom.direction * 75 : 0,
+    y: custom.isMobile ? 0 : custom.direction * 55,
+    filter: "blur(6px)",
+    scale: 0.985,
+  }),
+  animate: {
+    opacity: 1,
+    x: 0,
+    y: 0,
+    filter: "blur(0px)",
+    scale: 1,
+    transition: {
+      duration: 0.35,
+      ease: [0.16, 1, 0.3, 1] as const,
+    },
+  },
+  exit: (custom: { direction: number; isMobile: boolean }) => ({
+    opacity: 0,
+    x: custom.isMobile ? -custom.direction * 75 : 0,
+    y: custom.isMobile ? 0 : -custom.direction * 55,
+    filter: "blur(6px)",
+    scale: 0.985,
+    transition: {
+      duration: 0.22,
+      ease: [0.7, 0, 0.84, 0] as const,
+    },
+  }),
+};
+
 export default function Home() {
   const { userProfile, loading: authLoading, error: authError, signInWithGoogle, signInWithEmulatorAccount, signOutUser } = useAuth();
 
   const [activeTab, setActiveTab] = useState<TabKey>("overview");
+  const [navDirection, setNavDirection] = useState<number>(1);
+  const [isMobileScreen, setIsMobileScreen] = useState(false);
+
+  useEffect(() => {
+    const checkMobile = () => setIsMobileScreen(window.innerWidth < 768);
+    checkMobile();
+    window.addEventListener("resize", checkMobile);
+    return () => window.removeEventListener("resize", checkMobile);
+  }, []);
+
   const [hardwareStaffFilter, setHardwareStaffFilter] = useState<StaffMember | null>(null);
   const [dataLoading, setDataLoading] = useState<boolean>(true);
   const [dataError, setDataError] = useState<string | null>(null);
@@ -250,8 +308,15 @@ export default function Home() {
     () => userProfile ? accessiblePages(userProfile, currentGrant, stocktakeRounds.some((round) => round.assignedUids?.includes(userProfile.uid))) : null,
     [userProfile, currentGrant, stocktakeRounds],
   );
-  const navigateToTab = (tab: TabKey) => {
-    if (accessibleTabs?.[tab]) setActiveTab(tab);
+  const navigateToTab = (nextTab: TabKey) => {
+    if (accessibleTabs?.[nextTab] && nextTab !== activeTab) {
+      const prevIdx = TAB_ORDER.indexOf(activeTab);
+      const nextIdx = TAB_ORDER.indexOf(nextTab);
+      if (prevIdx !== -1 && nextIdx !== -1) {
+        setNavDirection(nextIdx > prevIdx ? 1 : -1);
+      }
+      setActiveTab(nextTab);
+    }
   };
 
   useEffect(() => {
@@ -764,11 +829,20 @@ export default function Home() {
               accessibleTabs={accessibleTabs!}
             />
 
-            <main className="flex-1 p-4 pb-24 sm:p-6 sm:pb-24 lg:p-8 lg:pb-8 max-w-7xl mx-auto w-full">
+            <main className="flex-1 p-4 pb-24 sm:p-6 sm:pb-24 lg:p-8 lg:pb-8 max-w-7xl mx-auto w-full overflow-hidden">
               {dataLoading ? (
                 <DashboardSkeleton />
               ) : (
-                <div key={activeTab} className="page-transition" data-scroll-motion-root>
+                <AnimatePresence mode="wait" custom={{ direction: navDirection, isMobile: isMobileScreen }}>
+                  <motion.div
+                    key={activeTab}
+                    custom={{ direction: navDirection, isMobile: isMobileScreen }}
+                    variants={TAB_PAGE_VARIANTS}
+                    initial="initial"
+                    animate="animate"
+                    exit="exit"
+                    data-scroll-motion-root
+                  >
                   {dataError && <div role="alert" className="mb-4 rounded-xl border border-rose-200 bg-rose-50 p-4 text-sm text-rose-800">Live Firestore data could not be loaded: {dataError}</div>}
                   {activeTab === "overview" && (userProfile.role === "SUPER_ADMIN" ? (
                     <OverviewTab
@@ -910,7 +984,8 @@ export default function Home() {
                     />
                   )}
                   {activeTab === "workspace" && <WorkspaceTab links={workspaceLinks} favorites={workspaceFavorites} staff={staff} isAdmin={userProfile.role === "SUPER_ADMIN"} onToggleFavorite={toggleWorkspaceFavorite} onSave={saveWorkspaceLink} onArchive={archiveWorkspaceLink} onRestore={restoreWorkspaceLink} />}
-                </div>
+                  </motion.div>
+                </AnimatePresence>
               )}
             </main>
           </>
