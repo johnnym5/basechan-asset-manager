@@ -1,6 +1,12 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
+import { AnimatePresence, motion } from "framer-motion";
+import {
+  MODAL_BACKDROP_VARIANTS,
+  MODAL_CONTENT_VARIANTS,
+  SPRING_TRANSITION,
+} from "@/lib/motion";
 import {
   Columns,
   Lock,
@@ -303,12 +309,25 @@ export function TemplateCustomizerModal({
   };
 
   return (
-    <div
-      className="fixed inset-0 z-[100] grid place-items-center bg-slate-950/75 p-2 backdrop-blur-sm sm:p-4"
-      role="dialog"
-      aria-modal="true"
-    >
-      <div className="flex max-h-[calc(100dvh-2rem)] w-full max-w-3xl flex-col overflow-hidden rounded-2xl border border-[var(--border)] bg-[var(--bg-surface)] text-[var(--text-primary)] shadow-2xl">
+    <AnimatePresence>
+      <motion.div
+        key="customizer-modal-backdrop"
+        initial="hidden"
+        animate="visible"
+        exit="exit"
+        variants={MODAL_BACKDROP_VARIANTS}
+        className="fixed inset-0 z-[100] grid place-items-center bg-slate-950/75 p-2 backdrop-blur-sm sm:p-4"
+        role="dialog"
+        aria-modal="true"
+        onClick={onClose}
+      >
+        <motion.div
+          key="customizer-modal-content"
+          variants={MODAL_CONTENT_VARIANTS}
+          transition={SPRING_TRANSITION}
+          className="flex max-h-[calc(100dvh-2rem)] w-full max-w-3xl flex-col overflow-hidden rounded-2xl border border-[var(--border)] bg-[var(--bg-surface)] text-[var(--text-primary)] shadow-2xl"
+          onClick={(e) => e.stopPropagation()}
+        >
         {/* Header */}
         <header className="flex shrink-0 items-center justify-between gap-3 border-b border-[var(--border)] bg-[var(--bg-muted)]/60 px-4 py-3 sm:px-6 sm:py-4">
           <div className="flex items-center gap-2.5">
@@ -560,7 +579,8 @@ export function TemplateCustomizerModal({
             {saving ? "Saving Template..." : "Save Template Changes"}
           </button>
         </footer>
-      </div>
-    </div>
+      </motion.div>
+    </motion.div>
+    </AnimatePresence>
   );
 }

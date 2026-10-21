@@ -1,5 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
+import { AnimatePresence, motion } from "framer-motion";
+import { MODAL_BACKDROP_VARIANTS, MODAL_CONTENT_VARIANTS, SPRING_TRANSITION } from "@/lib/motion";
 import { PhysicalAsset } from "@/types/assets";
 import { useAuth } from "@/context/AuthContext";
 import {
@@ -80,13 +82,29 @@ export const AssetDetailModal: React.FC<AssetDetailModalProps> = ({
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [isOpen, hasPrevious, hasNext, onPrevious, onNext]);
 
-  if (!isOpen || !mounted) return null;
+  if (!mounted) return null;
 
   const hasMissingSerial = !asset.serialNumber || asset.serialNumber === "NaN" || asset.serialNumber.trim() === "";
 
   return createPortal(
-    <div className="fixed inset-0 z-[9999] bg-slate-950/80 backdrop-blur-md flex items-center justify-center p-3 sm:p-6 overflow-y-auto">
-      <div className="relative my-auto w-full max-w-sm md:max-w-3xl lg:max-w-4xl max-h-[85vh] flex flex-col rounded-2xl border border-[var(--border)] bg-[var(--bg-surface)] shadow-2xl overflow-hidden animate-in fade-in zoom-in duration-150">
+    <AnimatePresence>
+      {isOpen && (
+        <motion.div
+          key="asset-detail-backdrop"
+          initial="hidden"
+          animate="visible"
+          exit="exit"
+          variants={MODAL_BACKDROP_VARIANTS}
+          className="fixed inset-0 z-[9999] bg-slate-950/80 backdrop-blur-md flex items-center justify-center p-3 sm:p-6 overflow-y-auto"
+          onClick={onClose}
+        >
+          <motion.div
+            key="asset-detail-content"
+            variants={MODAL_CONTENT_VARIANTS}
+            transition={SPRING_TRANSITION}
+            className="relative my-auto w-full max-w-sm md:max-w-3xl lg:max-w-4xl max-h-[85vh] flex flex-col rounded-2xl border border-[var(--border)] bg-[var(--bg-surface)] shadow-2xl overflow-hidden"
+            onClick={(e) => e.stopPropagation()}
+          >
 
         {/* Modal Header */}
         <div className="flex shrink-0 justify-between items-center px-4 sm:px-6 py-4 border-b border-[var(--border)] bg-[var(--bg-muted)]/60">
@@ -303,8 +321,10 @@ export const AssetDetailModal: React.FC<AssetDetailModalProps> = ({
           </button>}
         </div>
 
-      </div>
-    </div>,
+      </motion.div>
+    </motion.div>
+    )}
+    </AnimatePresence>,
     document.body
   );
 };
