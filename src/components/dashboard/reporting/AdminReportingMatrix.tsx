@@ -254,14 +254,6 @@ export function AdminReportingMatrix({ adminUid, staffList }: Props) {
               </button>
             )}
           </div>
-                className="inline-flex items-center gap-1 px-3 py-1.5 rounded-xl border border-[var(--border)] bg-[var(--bg-surface)] text-xs font-semibold text-blue-600 dark:text-blue-400 hover:bg-[var(--bg-muted)] transition-colors"
-                title="Jump to Current Week"
-              >
-                <RotateCcw className="h-3.5 w-3.5" />
-                Current Week
-              </button>
-            )}
-          </div>
         </div>
 
         {/* Department & Branch Filters Bar */}

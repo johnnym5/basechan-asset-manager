@@ -171,5 +171,20 @@ service cloud.firestore {
       allow create: if signedIn();
       allow update, delete: if false;
     }
+
+    match /reportTemplates/{templateId} {
+      allow read: if signedIn();
+      allow create, update, delete: if signedIn();
+    }
+    match /weeklyReports/{reportId} {
+      allow read: if signedIn();
+      allow create, update: if signedIn();
+      allow delete: if isAdmin();
+    }
+    match /monthlyPackages/{packageId} {
+      allow read: if signedIn();
+      allow create, update: if signedIn();
+      allow delete: if isAdmin();
+    }
   }
 }
