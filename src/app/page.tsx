@@ -27,6 +27,7 @@ import { deleteField as firestoreDeleteField } from "firebase/firestore";
 import { StocktakeTab } from "@/components/dashboard/StocktakeTab";
 import { TaskInboxTab } from "@/components/dashboard/TaskInboxTab";
 import { WorkspaceTab } from "@/components/dashboard/WorkspaceTab";
+import { ReportingTab } from "@/components/dashboard/ReportingTab";
 import { InboxTask, StocktakeItem, StocktakeRound } from "@/types/assets";
 import { listPendingAssetUpdates, queueAssetUpdate, flushAssetUpdates, retryAssetUpdate, cacheAssignedAssets, readCachedAssignedAssets, PendingAssetUpdate, listPendingRepairRequests, queueRepairRequest, flushRepairRequests, retryRepairRequest, PendingRepairRequest } from "@/lib/offlineAssetQueue";
 
@@ -861,6 +862,10 @@ export default function Home() {
                       onBulkArchive={(ids) => archiveRecords("staff_inventory", ids, true)}
                       onBulkRestore={(ids) => archiveRecords("staff_inventory", ids, false)}
                     />
+                  )}
+
+                  {activeTab === "reporting" && (
+                    <ReportingTab userProfile={userProfile} staffList={staff} />
                   )}
 
                   {activeTab === "ingestion" && (
