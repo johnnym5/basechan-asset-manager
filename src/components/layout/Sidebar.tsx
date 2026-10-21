@@ -19,6 +19,9 @@ import {
   Inbox,
   BriefcaseBusiness,
   FileText,
+  LayoutGrid,
+  X,
+  ChevronUp,
 } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 import { PageAccess } from "@/lib/accessControl";
@@ -78,8 +81,18 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeTab, onSelectTab, missin
     });
   }
 
+  const [mobileDrawerOpen, setMobileDrawerOpen] = useState(false);
   const visibleItems = navigationItems.filter((item) => accessibleTabs[item.key]);
   const labelFor = (key: TabKey, label: string) => key === "hardware" && !isAdmin ? "My Assets" : key === "overview" && !isAdmin ? "My Dashboard" : label;
+
+  // Primary dock shortcuts
+  const primaryDockKeys: TabKey[] = ["overview", "hardware", "credentials", "reporting"];
+  const primaryDockItems = primaryDockKeys
+    .map((k) => visibleItems.find((item) => item.key === k))
+    .filter(Boolean) as typeof visibleItems;
+
+  const nonDockItems = visibleItems.filter((item) => !primaryDockKeys.includes(item.key));
+  const hasNonDockBadge = nonDockItems.some((item) => item.badge !== undefined && item.badge > 0);
 
   return (
     <>
@@ -190,17 +203,127 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeTab, onSelectTab, missin
         </div>
       </aside>
     </div>
-    <nav aria-label="Main navigation" className="fixed inset-x-0 bottom-0 z-40 flex h-16 items-stretch gap-1 overflow-x-auto border-t border-[var(--border)] bg-[var(--bg-surface)] px-2 pb-[env(safe-area-inset-bottom)] shadow-[0_-8px_24px_rgba(2,6,23,0.16)] md:hidden">
-      {visibleItems.map((item) => {
+
+    {/* Concept 1: Floating Glass Island Capsule Dock (Mobile View) */}
+    <nav
+      aria-label="Mobile navigation"
+      className="fixed bottom-3 inset-x-3 z-40 md:hidden bg-slate-900/90 dark:bg-slate-950/95 text-white backdrop-blur-xl border border-white/10 shadow-[0_12px_36px_rgba(0,0,0,0.4)] rounded-full px-3 py-2 flex items-center justify-around"
+    >
+      {primaryDockItems.map((item) => {
         const Icon = item.icon;
         const selected = activeTab === item.key;
-        return <button key={item.key} type="button" onClick={() => onSelectTab(item.key)} aria-current={selected ? "page" : undefined} aria-label={item.label} title={item.label} className={`relative flex min-w-[4.1rem] flex-1 flex-col items-center justify-center gap-1 rounded-lg px-1 text-[10px] font-medium ${selected ? "text-blue-600 dark:text-gold-400" : "text-[var(--text-muted)]"}`}>
-          <Icon className="h-5 w-5" />
-          <span className="max-w-[4.2rem] truncate">{labelFor(item.key, item.label).replace("Overview & Metrics", "Home").replace("Digital & Credentials Vault", "Vault").replace("Missing Details Auditor", "Audit").replace("Excel Ingestion & Sync", "Import")}</span>
-          {item.badge !== undefined && <span className="absolute right-2 top-1 h-2 w-2 rounded-full bg-amber-500" />}
-        </button>;
+        return (
+          <button
+            key={item.key}
+            type="button"
+            onClick={() => {
+              onSelectTab(item.key);
+              setMobileDrawerOpen(false);
+            }}
+            aria-current={selected ? "page" : undefined}
+            className={`relative flex items-center justify-center transition-all duration-200 ${
+              selected
+                ? "bg-blue-600 text-white font-bold scale-105 shadow-md px-3.5 py-2 rounded-full gap-1.5"
+                : "p-2.5 text-slate-400 hover:text-white rounded-full"
+            }`}
+          >
+            <Icon className="h-5 w-5 shrink-0" />
+            {selected && (
+              <span className="text-xs font-bold whitespace-nowrap animate-in fade-in zoom-in duration-150">
+                {item.key === "hardware" ? "Assets" : item.key === "overview" ? "Home" : item.key === "credentials" ? "Vault" : "Reports"}
+              </span>
+            )}
+            {!selected && item.badge !== undefined && (
+              <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-amber-500" />
+            )}
+          </button>
+        );
       })}
+
+      {/* 5th Slot: More Modules Trigger */}
+      <button
+        type="button"
+        onClick={() => setMobileDrawerOpen((prev) => !prev)}
+        className={`relative flex items-center justify-center p-2.5 rounded-full transition-all duration-200 ${
+          mobileDrawerOpen || nonDockItems.some((item) => activeTab === item.key)
+            ? "bg-white/15 text-gold-400 font-bold scale-105"
+            : "text-slate-400 hover:text-white"
+        }`}
+        title="More Enterprise Modules"
+      >
+        <LayoutGrid className="h-5 w-5 shrink-0" />
+        {hasNonDockBadge && (
+          <span className="absolute top-1.5 right-1.5 w-2.5 h-2.5 rounded-full bg-amber-500 ring-2 ring-slate-900" />
+        )}
+      </button>
     </nav>
+
+    {/* Quick Module Bottom Sheet Drawer */}
+    {mobileDrawerOpen && (
+      <div
+        className="fixed inset-0 z-50 bg-slate-950/60 backdrop-blur-sm md:hidden animate-in fade-in duration-150 flex flex-col justify-end"
+        onClick={() => setMobileDrawerOpen(false)}
+      >
+        <div
+          className="bg-[var(--bg-surface)] border-t border-[var(--border)] rounded-t-3xl p-5 shadow-2xl max-h-[85vh] overflow-y-auto space-y-4 animate-in slide-in-from-bottom duration-200"
+          onClick={(e) => e.stopPropagation()}
+        >
+          {/* Top Drag Handle & Header */}
+          <div className="space-y-3">
+            <div className="w-12 h-1 rounded-full bg-[var(--border)] mx-auto" />
+            <div className="flex items-center justify-between">
+              <div>
+                <h2 className="text-base font-bold text-[var(--text-primary)]">Enterprise Modules</h2>
+                <p className="text-xs text-[var(--text-muted)]">Select any workspace tool or report view</p>
+              </div>
+              <button
+                onClick={() => setMobileDrawerOpen(false)}
+                className="p-2 rounded-xl text-[var(--text-muted)] hover:bg-[var(--bg-muted)] hover:text-[var(--text-primary)]"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+          </div>
+
+          {/* 2-Column Grid of All Accessible Modules */}
+          <div className="grid grid-cols-2 gap-2.5 pt-1">
+            {visibleItems.map((item) => {
+              const Icon = item.icon;
+              const selected = activeTab === item.key;
+              return (
+                <button
+                  key={item.key}
+                  type="button"
+                  onClick={() => {
+                    onSelectTab(item.key);
+                    setMobileDrawerOpen(false);
+                  }}
+                  className={`flex flex-col items-start gap-2 p-3 rounded-2xl border text-left transition-all ${
+                    selected
+                      ? "border-blue-600 bg-blue-500/10 text-blue-600 dark:text-gold-400 font-bold shadow-sm"
+                      : "border-[var(--border)] bg-[var(--bg-primary)] text-[var(--text-primary)] hover:bg-[var(--bg-muted)]"
+                  }`}
+                >
+                  <div className="flex items-center justify-between w-full">
+                    <div className={`p-2 rounded-xl ${selected ? "bg-blue-600 text-white" : "bg-[var(--bg-muted)] text-[var(--text-muted)]"}`}>
+                      <Icon className="h-4 w-4" />
+                    </div>
+                    {item.badge !== undefined && (
+                      <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${item.badgeColor || "bg-amber-100 text-amber-800 border-amber-200"}`}>
+                        {item.badge}
+                      </span>
+                    )}
+                  </div>
+                  <span className="text-xs font-bold leading-tight">
+                    {labelFor(item.key, item.label)}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      </div>
+    )}
     </>
   );
 };
