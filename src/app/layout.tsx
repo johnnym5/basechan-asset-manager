@@ -4,6 +4,7 @@ import { AuthProvider } from "@/context/AuthContext";
 import { ThemeProvider } from "@/context/ThemeContext";
 import { ScrollMotion } from "@/components/ui/ScrollMotion";
 import { ServiceWorkerRegistration } from "@/components/ui/ServiceWorkerRegistration";
+import { AmbientBackground } from "@/components/ui/AmbientBackground";
 
 export const metadata: Metadata = {
   title: "Basechan Enterprise Asset Manager",
@@ -20,6 +21,7 @@ export default function RootLayout({
     <html lang="en" suppressHydrationWarning>
       <body className="antialiased min-h-screen bg-[var(--bg-primary)] text-[var(--text-primary)]">
         <ThemeProvider>
+          <AmbientBackground />
           <AuthProvider><ServiceWorkerRegistration /><ScrollMotion>{children}</ScrollMotion></AuthProvider>
         </ThemeProvider>
       </body>
