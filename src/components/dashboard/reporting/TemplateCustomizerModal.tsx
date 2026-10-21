@@ -124,6 +124,33 @@ export function TemplateCustomizerModal({
     );
   };
 
+  const handleAddDefaultRowItem = (secId: string, itemTitle: string) => {
+    if (!itemTitle.trim()) return;
+    setActiveSections((prev) =>
+      prev.map((sec) => {
+        if (sec.id === secId) {
+          const firstColKey = sec.columns[0]?.key || "item";
+          const newRow = { [firstColKey]: itemTitle.trim() };
+          return { ...sec, defaultRows: [...(sec.defaultRows || []), newRow] };
+        }
+        return sec;
+      })
+    );
+  };
+
+  const handleDeleteDefaultRowItem = (secId: string, rowIndex: number) => {
+    setActiveSections((prev) =>
+      prev.map((sec) => {
+        if (sec.id === secId) {
+          const updatedRows = [...(sec.defaultRows || [])];
+          updatedRows.splice(rowIndex, 1);
+          return { ...sec, defaultRows: updatedRows };
+        }
+        return sec;
+      })
+    );
+  };
+
   const handleSave = async () => {
     setSaving(true);
     setMessage(null);
@@ -300,6 +327,46 @@ export function TemplateCustomizerModal({
                         {/* Add Column Inline */}
                         <AddColumnInlineForm onAddColumn={(label, type) => handleAddColumn(sec.id, label, type)} />
                       </div>
+
+                      {/* Default Pre-filled Rows Manager */}
+                      <div className="space-y-2 border-t border-[var(--border)] pt-2.5">
+                        <p className="text-[11px] font-semibold text-[var(--text-muted)] uppercase tracking-wider">
+                          Default Pre-filled Row Items
+                        </p>
+                        {sec.defaultRows && sec.defaultRows.length > 0 ? (
+                          <div className="flex flex-wrap gap-1.5">
+                            {sec.defaultRows.map((row, rIdx) => {
+                              const firstKey = sec.columns[0]?.key || Object.keys(row)[0] || "";
+                              const itemLabel = row[firstKey] || `Row ${rIdx + 1}`;
+                              return (
+                                <div
+                                  key={rIdx}
+                                  className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg border border-[var(--border)] bg-[var(--bg-muted)]/60 text-xs font-medium text-[var(--text-primary)]"
+                                >
+                                  <span>{itemLabel}</span>
+                                  <button
+                                    type="button"
+                                    onClick={() => handleDeleteDefaultRowItem(sec.id, rIdx)}
+                                    className="text-rose-500 hover:text-rose-700 ml-0.5"
+                                    title="Remove Default Row"
+                                  >
+                                    ×
+                                  </button>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        ) : (
+                          <p className="text-[11px] text-[var(--text-muted)] italic">
+                            No default rows configured. Rows will start blank in new weekly reports.
+                          </p>
+                        )}
+
+                        <AddRowItemInlineForm
+                          firstColLabel={sec.columns[0]?.label || "Item Label"}
+                          onAddRowItem={(itemTitle) => handleAddDefaultRowItem(sec.id, itemTitle)}
+                        />
+                      </div>
                     </div>
                   ))
                 )}
@@ -426,6 +493,66 @@ function AddColumnInlineForm({
         className="px-2.5 py-1 rounded bg-blue-600 text-white text-xs font-semibold disabled:opacity-50"
       >
         Add
+      </button>
+      <button
+        type="button"
+        onClick={() => setOpen(false)}
+        className="px-2 py-1 text-xs text-[var(--text-muted)] hover:text-[var(--text-primary)]"
+      >
+        Cancel
+      </button>
+    </div>
+  );
+}
+
+// Sub-component for adding default pre-filled row items to a section
+function AddRowItemInlineForm({
+  firstColLabel,
+  onAddRowItem,
+}: {
+  firstColLabel: string;
+  onAddRowItem: (itemTitle: string) => void;
+}) {
+  const [itemTitle, setItemTitle] = useState("");
+  const [open, setOpen] = useState(false);
+
+  if (!open) {
+    return (
+      <button
+        type="button"
+        onClick={() => setOpen(true)}
+        className="inline-flex items-center gap-1 text-[11px] font-semibold text-blue-600 dark:text-blue-400 hover:underline pt-1"
+      >
+        <Plus className="h-3 w-3" />
+        Add Pre-filled Default Row ({firstColLabel})
+      </button>
+    );
+  }
+
+  const handleAdd = () => {
+    if (itemTitle.trim()) {
+      onAddRowItem(itemTitle.trim());
+      setItemTitle("");
+      setOpen(false);
+    }
+  };
+
+  return (
+    <div className="flex items-center gap-2 pt-1 flex-wrap">
+      <input
+        type="text"
+        placeholder={`Item Name (e.g. ${firstColLabel})`}
+        value={itemTitle}
+        onChange={(e) => setItemTitle(e.target.value)}
+        className="rounded border border-[var(--border)] bg-[var(--bg-surface)] px-2.5 py-1 text-xs font-medium focus:outline-none"
+      />
+      <button
+        type="button"
+        onClick={handleAdd}
+        disabled={!itemTitle.trim()}
+        className="px-2.5 py-1 rounded bg-blue-600 text-white text-xs font-semibold disabled:opacity-50"
+      >
+        Add Row Item
       </button>
       <button
         type="button"
