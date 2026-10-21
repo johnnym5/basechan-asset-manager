@@ -172,7 +172,7 @@ export const FacilitiesTab: React.FC<FacilitiesTabProps> = ({ facilities, grant,
             <p className="text-xs text-[var(--text-muted)] mt-1">Try adjusting your search filters.</p>
           </div>
         ) : (
-          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-4 lg:grid-cols-3 xl:grid-cols-4">
+          <div className="@container grid grid-cols-1 gap-3 @sm:grid-cols-2 @lg:grid-cols-3 @2xl:grid-cols-4 sm:gap-4">
             {filteredFacilities.map((fac) => {
               const hasUser = fac.assignedOrShared && fac.assignedOrShared.trim().toLowerCase() !== "unassigned";
               return (

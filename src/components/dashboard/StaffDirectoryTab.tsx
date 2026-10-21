@@ -189,7 +189,7 @@ export const StaffDirectoryTab: React.FC<StaffDirectoryTabProps> = ({
             <p className="text-xs text-[var(--text-muted)] mt-1">Try adjusting your search criteria.</p>
           </div>
         ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-4">
+          <div className="@container grid grid-cols-1 gap-3 @sm:grid-cols-2 @lg:grid-cols-3 @2xl:grid-cols-4 sm:gap-4">
             {filteredStaff.map((person) => {
               const assetCount = getStaffAssetCount(person);
               return (

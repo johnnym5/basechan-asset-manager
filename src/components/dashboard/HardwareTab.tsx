@@ -276,7 +276,7 @@ export const HardwareTab: React.FC<HardwareTabProps> = ({
             <p className="text-xs text-[var(--text-muted)] mt-1">Try clearing or adjusting your search filters.</p>
           </div>
         ) : (
-          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-4 lg:grid-cols-3 xl:grid-cols-4">
+          <div className="@container grid grid-cols-1 gap-3 @sm:grid-cols-2 @lg:grid-cols-3 @2xl:grid-cols-4 sm:gap-4">
             {visibleAssets.map((asset) => {
               const hasUser = asset.assignedStaff && asset.assignedStaff.trim().toLowerCase() !== "unassigned";
               return (
@@ -374,7 +374,7 @@ export const HardwareTab: React.FC<HardwareTabProps> = ({
                   visibleAssets.map((asset) => {
                     const hasMissingSerial = !asset.serialNumber || asset.serialNumber === "NaN" || asset.serialNumber === "";
                     return (
-                      <tr key={asset.id} className="cursor-pointer transition-colors hover:bg-[var(--bg-muted)]" onClick={() => setSelectedDetailAsset(asset)}>
+                      <tr key={asset.id} style={{ contentVisibility: "auto", containIntrinsicSize: "0 50px" }} className="cursor-pointer transition-colors hover:bg-[var(--bg-muted)]" onClick={() => setSelectedDetailAsset(asset)}>
                         <td className="py-3 px-2" onClick={(e) => e.stopPropagation()}><SelectionCheckbox checked={selectedIds.includes(asset.id)} onChange={() => setSelectedIds((ids) => ids.includes(asset.id) ? ids.filter((id) => id !== asset.id) : [...ids, asset.id])} label={`Select ${asset.tag}`} /></td>
                         <td className="py-3 px-4 font-mono font-bold text-blue-600 dark:text-blue-400">
                           {asset.tag}
