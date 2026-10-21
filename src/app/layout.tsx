@@ -10,6 +10,14 @@ export const metadata: Metadata = {
   title: "Basechan Enterprise Asset Manager",
   description: "Enterprise IT Hardware, Digital Credentials, Workbooks & Facilities Asset Command",
   manifest: "/manifest.json",
+  icons: {
+    icon: [
+      { url: "/logo.png", type: "image/png" },
+      { url: "/icon.png", type: "image/png" },
+    ],
+    shortcut: "/logo.png",
+    apple: "/logo.png",
+  },
 };
 
 export default function RootLayout({
