@@ -16,6 +16,7 @@ import {
   fetchOrCompileMonthlyPackage,
   fetchUserMonthlyPackagesHistory,
 } from "@/lib/reportingService";
+import { AnimatedSelect } from "@/components/ui/AnimatedSelect";
 
 interface Props {
   userId: string;
@@ -116,28 +117,24 @@ export function MonthlyComparisonView({ userId, userName }: Props) {
 
           {/* Manual Month Compile Controller */}
           <div className="flex items-center gap-2 flex-wrap">
-            <select
-              value={compileMonth}
-              onChange={(e) => setCompileMonth(Number(e.target.value))}
-              className="rounded-lg border border-[var(--border)] bg-[var(--bg-surface)] px-2.5 py-1.5 text-xs font-semibold focus:outline-none"
-            >
-              {MONTH_NAMES.map((name, idx) => (
-                <option key={name} value={idx + 1}>
-                  {name}
-                </option>
-              ))}
-            </select>
-            <select
-              value={compileYear}
-              onChange={(e) => setCompileYear(Number(e.target.value))}
-              className="rounded-lg border border-[var(--border)] bg-[var(--bg-surface)] px-2.5 py-1.5 text-xs font-semibold focus:outline-none"
-            >
-              {[currentYear - 1, currentYear, currentYear + 1].map((y) => (
-                <option key={y} value={y}>
-                  {y}
-                </option>
-              ))}
-            </select>
+            <AnimatedSelect
+              value={String(compileMonth)}
+              onChange={(val) => setCompileMonth(Number(val))}
+              options={MONTH_NAMES.map((name, idx) => ({
+                value: String(idx + 1),
+                label: name,
+              }))}
+              ariaLabel="Compile Month"
+            />
+            <AnimatedSelect
+              value={String(compileYear)}
+              onChange={(val) => setCompileYear(Number(val))}
+              options={[currentYear - 1, currentYear, currentYear + 1].map((y) => ({
+                value: String(y),
+                label: String(y),
+              }))}
+              ariaLabel="Compile Year"
+            />
 
             <button
               onClick={handleManualCompile}

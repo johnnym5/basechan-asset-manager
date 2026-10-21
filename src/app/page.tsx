@@ -6,6 +6,7 @@ import { AnimatePresence, motion, Variants } from "framer-motion";
 import { useAuth } from "@/context/AuthContext";
 import { Navbar } from "@/components/layout/Navbar";
 import { Sidebar, TabKey } from "@/components/layout/Sidebar";
+import { AnimatedBackground } from "@/components/ui/AnimatedBackground";
 import { OverviewTab } from "@/components/dashboard/OverviewTab";
 import { HardwareTab } from "@/components/dashboard/HardwareTab";
 import { MissingDetailsTab } from "@/components/dashboard/MissingDetailsTab";
@@ -766,7 +767,8 @@ export default function Home() {
   };
 
   return (
-    <div className="min-h-screen flex flex-col">
+    <div className="min-h-screen flex flex-col relative">
+      <AnimatedBackground />
       <Navbar dataLoading={dataLoading} isOnline={isOnline} onShowHelp={() => setShowWelcome(true)} onSignOut={() => void signOutUser()} />
 
       {/* Main Body */}
@@ -991,10 +993,16 @@ export default function Home() {
           </>
         )}
       </div>
-      {editor && <RecordEditorModal title={`${editor.record ? "Edit" : editor.ids ? "Bulk edit" : "Create"} ${editor.resource.replaceAll("_", " ")}`} fields={editor.ids ? actionFields[editor.resource].filter((field) => !["email", "branch", "department", "assignedStaffEmail", "assignedUserEmail", "primaryOwnerEmail", "primaryOwnerBranch", "assignedOrSharedEmail", "assignedOrSharedBranch", "rawPass", "isLocked"].includes(field.key)) : actionFields[editor.resource]} initial={editor.record} bulk={!!editor.ids} onClose={() => setEditor(null)} onSave={(values) => saveRecords(editor.resource, editor.ids || (editor.record ? [editor.record.id] : []), values, !editor.record && !editor.ids)} />}
+      <AnimatePresence>
+        {editor && <RecordEditorModal title={`${editor.record ? "Edit" : editor.ids ? "Bulk edit" : "Create"} ${editor.resource.replaceAll("_", " ")}`} fields={editor.ids ? actionFields[editor.resource].filter((field) => !["email", "branch", "department", "assignedStaffEmail", "assignedUserEmail", "primaryOwnerEmail", "primaryOwnerBranch", "assignedOrSharedEmail", "assignedOrSharedBranch", "rawPass", "isLocked"].includes(field.key)) : actionFields[editor.resource]} initial={editor.record} bulk={!!editor.ids} onClose={() => setEditor(null)} onSave={(values) => saveRecords(editor.resource, editor.ids || (editor.record ? [editor.record.id] : []), values, !editor.record && !editor.ids)} />}
+      </AnimatePresence>
       {grantLookupError && <div role="alert" className="fixed bottom-20 left-1/2 z-[70] w-[min(36rem,calc(100vw-2rem))] -translate-x-1/2 rounded-xl border border-rose-300 bg-rose-50 p-4 text-sm text-rose-800 shadow-xl">{grantLookupError}<button type="button" onClick={() => setGrantLookupError(null)} className="ml-3 font-bold underline">Dismiss</button></div>}
-      {grantTarget && <AccessGrantModal staff={grantTarget} current={accessGrants[grantTarget.uid || ""]} onClose={() => setGrantTarget(null)} onSave={saveAccessGrant} />}
-      {showWelcome && userProfile && accessibleTabs && <OnboardingGuide displayName={userProfile.displayName} role={userProfile.role} accessibleTabs={accessibleTabs} onComplete={completeOnboarding} onDismiss={() => setShowWelcome(false)} />}
+      <AnimatePresence>
+        {grantTarget && <AccessGrantModal staff={grantTarget} current={accessGrants[grantTarget.uid || ""]} onClose={() => setGrantTarget(null)} onSave={saveAccessGrant} />}
+      </AnimatePresence>
+      <AnimatePresence>
+        {showWelcome && userProfile && accessibleTabs && <OnboardingGuide displayName={userProfile.displayName} role={userProfile.role} accessibleTabs={accessibleTabs} onComplete={completeOnboarding} onDismiss={() => setShowWelcome(false)} />}
+      </AnimatePresence>
     </div>
   );
 }

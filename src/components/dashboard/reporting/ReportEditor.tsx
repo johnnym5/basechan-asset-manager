@@ -26,6 +26,7 @@ import {
   submitWeeklyReport,
 } from "@/lib/reportingService";
 import { TemplateCustomizerModal } from "./TemplateCustomizerModal";
+import { ConfirmModal } from "@/components/modals/ConfirmModal";
 
 interface Props {
   userId: string;
@@ -178,10 +179,10 @@ export function ReportEditor({ userId, userName, userEmail, isAdmin }: Props) {
     }
   };
 
-  const handleSubmit = async () => {
-    if (!window.confirm(`Submit ${activeCategory} report for Week ${weekDetails.weekNumber}? Once submitted, headers and entries will be frozen for history.`)) {
-      return;
-    }
+  const [showSubmitConfirm, setShowSubmitConfirm] = useState(false);
+
+  const handleSubmitConfirmed = async () => {
+    setShowSubmitConfirm(false);
     setSubmitting(true);
     setMessage(null);
     try {
@@ -289,7 +290,7 @@ export function ReportEditor({ userId, userName, userEmail, isAdmin }: Props) {
 
               <button
                 type="button"
-                onClick={handleSubmit}
+                onClick={() => setShowSubmitConfirm(true)}
                 disabled={submitting || loading}
                 className="inline-flex items-center gap-1.5 rounded-xl bg-blue-600 px-5 py-2 text-xs font-semibold text-white hover:bg-blue-700 disabled:opacity-50 transition-colors shadow-sm"
               >
@@ -706,6 +707,18 @@ export function ReportEditor({ userId, userName, userEmail, isAdmin }: Props) {
           }}
         />
       )}
+
+      {/* Confirm Submit Weekly Report Modal */}
+      <ConfirmModal
+        isOpen={showSubmitConfirm}
+        title={`Submit ${activeCategory} Weekly Report?`}
+        message={`Submit ${activeCategory} report for Week ${weekDetails.weekNumber}? Once submitted, headers and entries will be frozen for history.`}
+        confirmLabel="Submit & Freeze"
+        cancelLabel="Keep Editing"
+        variant="info"
+        onConfirm={handleSubmitConfirmed}
+        onCancel={() => setShowSubmitConfirm(false)}
+      />
     </div>
   );
 }

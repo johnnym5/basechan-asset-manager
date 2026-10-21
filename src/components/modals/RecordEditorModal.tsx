@@ -1,5 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
+import { motion } from "framer-motion";
+import { MODAL_BACKDROP_VARIANTS, MODAL_CONTENT_VARIANTS, SPRING_TRANSITION } from "@/lib/motion";
 import { X, Save } from "lucide-react";
 
 export interface RecordField {
@@ -61,8 +63,26 @@ export const RecordEditorModal: React.FC<RecordEditorModalProps> = ({ title, fie
   if (!mounted) return null;
 
   return createPortal(
-    <div className="fixed inset-0 z-[9999] bg-slate-950/80 backdrop-blur-md flex items-center justify-center p-3 sm:p-6 overflow-y-auto" role="dialog" aria-modal="true" aria-label={title}>
-      <form onSubmit={submit} className="relative my-auto w-full max-w-sm md:max-w-xl lg:max-w-2xl max-h-[85vh] flex flex-col rounded-2xl border border-[var(--border)] bg-[var(--bg-surface)] text-[var(--text-primary)] shadow-2xl overflow-hidden animate-in fade-in zoom-in duration-150">
+    <motion.div
+      key="record-editor-backdrop"
+      initial="hidden"
+      animate="visible"
+      exit="exit"
+      variants={MODAL_BACKDROP_VARIANTS}
+      className="fixed inset-0 z-[9999] bg-slate-950/80 backdrop-blur-md flex items-center justify-center p-3 sm:p-6 overflow-y-auto"
+      role="dialog"
+      aria-modal="true"
+      aria-label={title}
+      onClick={onClose}
+    >
+      <motion.form
+        key="record-editor-content"
+        variants={MODAL_CONTENT_VARIANTS}
+        transition={SPRING_TRANSITION}
+        onSubmit={submit}
+        className="relative my-auto w-full max-w-sm md:max-w-xl lg:max-w-2xl max-h-[85vh] flex flex-col rounded-2xl border border-[var(--border)] bg-[var(--bg-surface)] text-[var(--text-primary)] shadow-2xl overflow-hidden"
+        onClick={(e) => e.stopPropagation()}
+      >
         <header className="flex shrink-0 items-center justify-between border-b border-[var(--border)] bg-[var(--bg-surface)] px-5 py-4">
           <h2 className="text-lg font-bold">{title}</h2>
           <button type="button" onClick={onClose} className="rounded-lg p-2 text-[var(--text-muted)] hover:bg-[var(--bg-muted)]" aria-label="Close"><X className="h-4 w-4" /></button>
@@ -86,8 +106,8 @@ export const RecordEditorModal: React.FC<RecordEditorModalProps> = ({ title, fie
           <button type="button" onClick={onClose} className="rounded-lg border border-[var(--border)] px-4 py-2 text-sm">Cancel</button>
           <button type="submit" disabled={saving} className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white disabled:opacity-50"><Save className="h-4 w-4" />{saving ? "Saving…" : "Save"}</button>
         </footer>
-      </form>
-    </div>,
+      </motion.form>
+    </motion.div>,
     document.body
   );
 };

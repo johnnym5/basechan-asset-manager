@@ -7,6 +7,7 @@ import { exportToExcel } from "@/lib/excelParser";
 import { AssetEditModal } from "../modals/AssetEditModal";
 import { CustodyTransferModal } from "../modals/CustodyTransferModal";
 import { AssetDetailModal } from "../modals/AssetDetailModal";
+import { AnimatedSelect } from "@/components/ui/AnimatedSelect";
 import {
   Laptop,
   Search,
@@ -231,39 +232,38 @@ export const HardwareTab: React.FC<HardwareTabProps> = ({
         </div>
 
         <div className="grid grid-cols-1 gap-2 w-full md:flex md:w-auto md:overflow-x-auto md:pb-0">
-          <select
+          <AnimatedSelect
             value={selectedBranch}
-            onChange={(e) => setSelectedBranch(e.target.value)}
-            className="min-w-0 text-xs px-2.5 py-2 border border-[var(--border)] rounded-lg bg-[var(--bg-primary)] text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-blue-500 md:w-auto"
-          >
-            <option value="ALL">All Branches</option>
-            <option value="Abuja">Abuja Branch</option>
-            <option value="Benin">Benin Branch</option>
-          </select>
+            onChange={setSelectedBranch}
+            options={[
+              { value: "ALL", label: "All Branches" },
+              { value: "Abuja", label: "Abuja Branch" },
+              { value: "Benin", label: "Benin Branch" },
+            ]}
+            ariaLabel="Filter by branch"
+          />
 
-          <select
+          <AnimatedSelect
             value={selectedCategory}
-            onChange={(e) => setSelectedCategory(e.target.value)}
-            className="min-w-0 text-xs px-2.5 py-2 border border-[var(--border)] rounded-lg bg-[var(--bg-primary)] text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-blue-500 md:w-auto"
-          >
-            <option value="ALL">All Categories</option>
-            {categories.map((c) => (
-              <option key={c} value={c}>
-                {c}
-              </option>
-            ))}
-          </select>
+            onChange={setSelectedCategory}
+            options={[
+              { value: "ALL", label: "All Categories" },
+              ...categories.map((c) => ({ value: c, label: c })),
+            ]}
+            ariaLabel="Filter by category"
+          />
 
-          <select
+          <AnimatedSelect
             value={selectedCondition}
-            onChange={(e) => setSelectedCondition(e.target.value)}
-            className="min-w-0 text-xs px-2.5 py-2 border border-[var(--border)] rounded-lg bg-[var(--bg-primary)] text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-blue-500 md:w-auto"
-          >
-            <option value="ALL">All Conditions</option>
-            <option value="Good">Good / Excellent</option>
-            <option value="Fair">Fair</option>
-            <option value="Faulty">Faulty / Repair</option>
-          </select>
+            onChange={setSelectedCondition}
+            options={[
+              { value: "ALL", label: "All Conditions" },
+              { value: "Good", label: "Good / Excellent" },
+              { value: "Fair", label: "Fair" },
+              { value: "Faulty", label: "Faulty / Repair" },
+            ]}
+            ariaLabel="Filter by condition"
+          />
         </div>
       </div>
 

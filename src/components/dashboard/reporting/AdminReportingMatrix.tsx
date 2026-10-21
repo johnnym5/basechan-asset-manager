@@ -23,6 +23,8 @@ import {
   fetchAllWeeklyReportsForWeek,
   grantLateUnlock,
 } from "@/lib/reportingService";
+import { AnimatedSelect } from "@/components/ui/AnimatedSelect";
+import { ConfirmModal } from "@/components/modals/ConfirmModal";
 import { WeeklyComparisonView } from "./WeeklyComparisonView";
 
 interface Props {
@@ -111,16 +113,14 @@ export function AdminReportingMatrix({ adminUid, staffList }: Props) {
     setReferenceDate(new Date());
   };
 
-  const handleGrantUnlock = async (staff: StaffMember) => {
-    const targetUid = staff.uid || staff.id;
-    if (!targetUid) {
-      alert("Selected staff member does not have a registered system UID.");
-      return;
-    }
-    if (!window.confirm(`Grant 24-hour late submission unlock for ${staff.name}?`)) {
-      return;
-    }
+  // Confirm Unlock State
+  const [confirmUnlockStaff, setConfirmUnlockStaff] = useState<StaffMember | null>(null);
 
+  const handleGrantUnlockConfirmed = async (staff: StaffMember) => {
+    const targetUid = staff.uid || staff.id;
+    if (!targetUid) return;
+
+    setConfirmUnlockStaff(null);
     setGrantingUid(targetUid);
     setMessage(null);
     try {
@@ -265,32 +265,26 @@ export function AdminReportingMatrix({ adminUid, staffList }: Props) {
             </div>
 
             {/* Department Filter */}
-            <select
+            <AnimatedSelect
               value={selectedDepartment}
-              onChange={(e) => setSelectedDepartment(e.target.value)}
-              className="rounded-lg border border-[var(--border)] bg-[var(--bg-surface)] px-2.5 py-1 text-xs font-semibold text-[var(--text-primary)] focus:outline-none"
-            >
-              <option value="ALL">All Departments ({departments.length})</option>
-              {departments.map((dept) => (
-                <option key={dept} value={dept}>
-                  {dept}
-                </option>
-              ))}
-            </select>
+              onChange={setSelectedDepartment}
+              options={[
+                { value: "ALL", label: `All Departments (${departments.length})` },
+                ...departments.map((dept) => ({ value: dept, label: dept })),
+              ]}
+              ariaLabel="Department filter"
+            />
 
             {/* Branch Filter */}
-            <select
+            <AnimatedSelect
               value={selectedBranch}
-              onChange={(e) => setSelectedBranch(e.target.value)}
-              className="rounded-lg border border-[var(--border)] bg-[var(--bg-surface)] px-2.5 py-1 text-xs font-semibold text-[var(--text-primary)] focus:outline-none"
-            >
-              <option value="ALL">All Branches ({branches.length})</option>
-              {branches.map((br) => (
-                <option key={br} value={br}>
-                  {br}
-                </option>
-              ))}
-            </select>
+              onChange={setSelectedBranch}
+              options={[
+                { value: "ALL", label: `All Branches (${branches.length})` },
+                ...branches.map((br) => ({ value: br, label: br })),
+              ]}
+              ariaLabel="Branch filter"
+            />
           </div>
 
           <span className="text-xs text-[var(--text-muted)] font-medium">
@@ -412,7 +406,7 @@ export function AdminReportingMatrix({ adminUid, staffList }: Props) {
                       {status !== "SUBMITTED" && (
                         <button
                           type="button"
-                          onClick={() => handleGrantUnlock(staff)}
+                          onClick={() => setConfirmUnlockStaff(staff)}
                           disabled={grantingUid === targetUid}
                           className="flex-1 inline-flex items-center justify-center gap-1.5 rounded-xl bg-amber-600 py-2 text-xs font-semibold text-white hover:bg-amber-700 disabled:opacity-50"
                         >
@@ -499,7 +493,7 @@ export function AdminReportingMatrix({ adminUid, staffList }: Props) {
                           {status !== "SUBMITTED" && (
                             <button
                               type="button"
-                              onClick={() => handleGrantUnlock(staff)}
+                              onClick={() => setConfirmUnlockStaff(staff)}
                               disabled={grantingUid === targetUid}
                               className="inline-flex items-center gap-1 rounded-lg bg-amber-600 px-2.5 py-1.5 text-xs font-semibold text-white hover:bg-amber-700 disabled:opacity-50"
                               title="Grant Late Submission Unlock"
@@ -563,6 +557,20 @@ export function AdminReportingMatrix({ adminUid, staffList }: Props) {
           </div>
         </div>
       )}
+
+      {/* Confirm Late Unlock Modal */}
+      <ConfirmModal
+        isOpen={!!confirmUnlockStaff}
+        title="Grant Late Submission Unlock"
+        message={confirmUnlockStaff ? `Grant a 24-hour late submission unlock for ${confirmUnlockStaff.name} for Week ${weekDetails.weekNumber}?` : ""}
+        confirmLabel="Grant Unlock"
+        cancelLabel="Cancel"
+        variant="warning"
+        onConfirm={() => {
+          if (confirmUnlockStaff) handleGrantUnlockConfirmed(confirmUnlockStaff);
+        }}
+        onCancel={() => setConfirmUnlockStaff(null)}
+      />
     </div>
   );
 }
