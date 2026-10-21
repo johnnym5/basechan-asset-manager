@@ -118,7 +118,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeTab, onSelectTab, missin
         onMouseLeave={() => setIsHovered(false)}
         className={`absolute inset-y-0 left-0 h-full z-30 flex flex-col transition-all duration-300 ease-in-out overflow-hidden ${
           isHovered ? "w-80" : "w-16"
-        } bg-white/35 dark:bg-[#0C1D2F]/50 backdrop-blur-2xl backdrop-saturate-180 border-r border-white/50 dark:border-white/15 shadow-[0_8px_32px_rgba(0,0,0,0.08),inset_0_1px_1px_rgba(255,255,255,0.6)] dark:shadow-[0_8px_32px_rgba(0,0,0,0.35),inset_0_1px_1px_rgba(255,255,255,0.12)]`}
+        } bg-white/25 dark:bg-[rgba(12,29,47,0.38)] backdrop-blur-md backdrop-saturate-150 border-r border-white/50 dark:border-white/15 shadow-[0_8px_32px_rgba(0,0,0,0.08),inset_0_1px_1px_rgba(255,255,255,0.6)] dark:shadow-[0_8px_32px_rgba(0,0,0,0.35),inset_0_1px_1px_rgba(255,255,255,0.12)]`}
       >
         {/* Vertical light refraction highlight on right edge */}
         <div className="pointer-events-none absolute inset-y-0 right-0 w-[1px] bg-gradient-to-b from-white/90 via-white/30 to-transparent dark:from-white/20 dark:via-white/5 dark:to-transparent" />
@@ -235,7 +235,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeTab, onSelectTab, missin
     {/* Floating Glass Island Capsule Dock (Mobile View) */}
     <nav
       aria-label="Mobile navigation"
-      className="fixed bottom-3 inset-x-3 z-40 md:hidden bg-white/40 dark:bg-[#0C1D2F]/60 text-slate-800 dark:text-slate-100 backdrop-blur-2xl backdrop-saturate-180 border border-white/60 dark:border-white/20 shadow-[0_10px_30px_rgba(0,0,0,0.12),inset_0_1px_1px_rgba(255,255,255,0.6)] dark:shadow-[0_12px_36px_rgba(0,0,0,0.4),inset_0_1px_1px_rgba(255,255,255,0.15)] rounded-full px-3 py-2 flex items-center justify-around"
+      className="fixed bottom-3 inset-x-3 z-40 md:hidden bg-white/25 dark:bg-[rgba(12,29,47,0.45)] text-slate-800 dark:text-slate-100 backdrop-blur-md backdrop-saturate-150 border border-white/60 dark:border-white/20 shadow-[0_10px_30px_rgba(0,0,0,0.12),inset_0_1px_1px_rgba(255,255,255,0.6)] dark:shadow-[0_12px_36px_rgba(0,0,0,0.4),inset_0_1px_1px_rgba(255,255,255,0.15)] rounded-full px-3 py-2 flex items-center justify-around"
     >
       {primaryDockItems.map((item) => {
         const Icon = item.icon;
@@ -309,7 +309,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeTab, onSelectTab, missin
             key="mobile-drawer-panel"
             variants={DRAWER_VARIANTS}
             transition={SPRING_TRANSITION}
-            className="bg-white/50 dark:bg-[#0C1D2F]/65 backdrop-blur-2xl backdrop-saturate-180 border-t border-white/60 dark:border-white/20 rounded-t-3xl p-5 shadow-[0_-12px_40px_rgba(0,0,0,0.12),inset_0_1px_1px_rgba(255,255,255,0.6)] dark:shadow-[0_-12px_40px_rgba(0,0,0,0.5),inset_0_1px_1px_rgba(255,255,255,0.15)] max-h-[85vh] overflow-y-auto space-y-4 no-scrollbar"
+            className="bg-white/30 dark:bg-[rgba(12,29,47,0.52)] backdrop-blur-md backdrop-saturate-150 border-t border-white/60 dark:border-white/20 rounded-t-3xl p-5 shadow-[0_-12px_40px_rgba(0,0,0,0.12),inset_0_1px_1px_rgba(255,255,255,0.6)] dark:shadow-[0_-12px_40px_rgba(0,0,0,0.5),inset_0_1px_1px_rgba(255,255,255,0.15)] max-h-[85vh] overflow-y-auto space-y-4 no-scrollbar"
             onClick={(e) => e.stopPropagation()}
           >
             {/* Top Drag Handle & Header */}
@@ -342,10 +342,10 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeTab, onSelectTab, missin
                       onSelectTab(item.key);
                       setMobileDrawerOpen(false);
                     }}
-                    className={`flex flex-col items-start gap-2 p-3 rounded-2xl border text-left transition-all duration-200 backdrop-blur-xl ${
+                    className={`flex flex-col items-start gap-2 p-3 rounded-2xl border text-left transition-all duration-200 backdrop-blur-md ${
                       selected
                         ? "border-blue-500/80 bg-blue-500/25 text-blue-600 dark:text-gold-400 font-bold shadow-md scale-[1.08] z-10 ring-2 ring-blue-500/30"
-                        : "border-white/50 dark:border-white/10 bg-white/30 dark:bg-white/10 text-[var(--text-primary)] hover:bg-white/50 dark:hover:bg-white/20 scale-100"
+                        : "border-white/50 dark:border-white/10 bg-white/20 dark:bg-white/10 text-[var(--text-primary)] hover:bg-white/40 dark:hover:bg-white/20 scale-100"
                     }`}
                   >
                     <div className="flex items-center justify-between w-full">

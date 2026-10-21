@@ -28,11 +28,34 @@
   --text-muted:   #94a3b8;
 }
 
-/* Fixed Tailwind neutrals in the dashboard must follow the active theme too. */
-.dark .bg-white { background-color: var(--bg-surface) !important; }
-.dark .bg-slate-50,
-.dark .bg-slate-100 { background-color: var(--bg-muted) !important; }
-.dark .bg-slate-200 { background-color: #21384f !important; }
+/* Dashboard Card Neutrals - Automatic Liquid Glass Styling */
+.dark .bg-white:not([class*="bg-white/"]) {
+  background-color: rgba(12, 29, 47, 0.55) !important;
+  backdrop-filter: blur(16px) saturate(160%);
+  -webkit-backdrop-filter: blur(16px) saturate(160%);
+  border-color: rgba(255, 255, 255, 0.12) !important;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.35), inset 0 1px 1px rgba(255, 255, 255, 0.12) !important;
+}
+
+[class*="bg-[var(--bg-surface)]"] {
+  background-color: rgba(255, 255, 255, 0.45) !important;
+  backdrop-filter: blur(16px) saturate(160%);
+  -webkit-backdrop-filter: blur(16px) saturate(160%);
+  border-color: rgba(255, 255, 255, 0.6) !important;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.08), inset 0 1px 1px rgba(255, 255, 255, 0.8) !important;
+}
+
+.dark [class*="bg-[var(--bg-surface)]"] {
+  background-color: rgba(12, 29, 47, 0.55) !important;
+  backdrop-filter: blur(16px) saturate(160%);
+  -webkit-backdrop-filter: blur(16px) saturate(160%);
+  border-color: rgba(255, 255, 255, 0.15) !important;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.35), inset 0 1px 1px rgba(255, 255, 255, 0.12) !important;
+}
+
+.dark .bg-slate-50:not([class*="bg-slate-50/"]),
+.dark .bg-slate-100:not([class*="bg-slate-100/"]) { background-color: var(--bg-muted) !important; }
+.dark .bg-slate-200:not([class*="bg-slate-200/"]) { background-color: #21384f !important; }
 .dark .border-slate-100,
 .dark .border-slate-200,
 .dark .border-slate-300 { border-color: var(--border) !important; }
@@ -110,7 +133,27 @@ html { scroll-behavior: smooth; scroll-padding-top: 5rem; }
 .scroll-reveal { opacity: 0; transform: translateY(18px); transition: opacity 850ms ease, transform 850ms cubic-bezier(.2,.75,.25,1); }
 .scroll-reveal.is-visible { opacity: 1; transform: translateY(0); }
 
-/* ── Custom scrollbars ───────────────────────────────────── */
+/* ── Liquid Glass Utility Classes ────────────────────────── */
+.glass-card, .liquid-glass {
+  background: rgba(255, 255, 255, 0.82) !important;
+  backdrop-filter: blur(28px) saturate(180%) !important;
+  -webkit-backdrop-filter: blur(28px) saturate(180%) !important;
+  border: 1px solid rgba(255, 255, 255, 0.6) !important;
+  box-shadow: 0 16px 50px rgba(0, 0, 0, 0.15), inset 0 1px 1px rgba(255, 255, 255, 0.8) !important;
+}
+
+.dark .glass-card, .dark .liquid-glass {
+  background: rgba(8, 15, 26, 0.85) !important;
+  backdrop-filter: blur(28px) saturate(180%) !important;
+  -webkit-backdrop-filter: blur(28px) saturate(180%) !important;
+  border: 1px solid rgba(255, 255, 255, 0.18) !important;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.6), inset 0 1px 1px rgba(255, 255, 255, 0.15) !important;
+}
+
+/* ── Custom scrollbars & No-scrollbar utility ────────────── */
+.no-scrollbar::-webkit-scrollbar { display: none; }
+.no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
 ::-webkit-scrollbar { width: 6px; height: 6px; }
 ::-webkit-scrollbar-track { background: var(--bg-muted); }
 ::-webkit-scrollbar-thumb { background: #94a3b8; border-radius: 3px; }

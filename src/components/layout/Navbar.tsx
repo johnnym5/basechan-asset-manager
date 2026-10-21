@@ -1,7 +1,9 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
+import { createPortal } from "react-dom";
 import Image from "next/image";
+import { AnimatePresence, motion } from "framer-motion";
 import { useTheme } from "@/context/ThemeContext";
 import { useAuth } from "@/context/AuthContext";
 import {
@@ -30,8 +32,11 @@ interface NavbarProps {
 export const Navbar: React.FC<NavbarProps> = ({ dataLoading = false, isOnline = true, onShowHelp, onSignOut }) => {
   const { theme, toggleTheme } = useTheme();
   const { userProfile } = useAuth();
+  const [mounted, setMounted] = useState(false);
   const [notificationsOpen, setNotificationsOpen] = useState(false);
   const [mobileProfileMenuOpen, setMobileProfileMenuOpen] = useState(false);
+
+  useEffect(() => { setMounted(true); }, []);
   const [logs, setLogs] = useState<AuditLog[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -202,161 +207,198 @@ export const Navbar: React.FC<NavbarProps> = ({ dataLoading = false, isOnline = 
             )}
 
             {/* Mobile Mini Vertical Scroll Menu (Icons Only) */}
-            {mobileProfileMenuOpen && (
-              <div
-                className="fixed inset-0 z-50 bg-slate-950/50 backdrop-blur-lg flex items-start justify-end p-4 animate-in fade-in duration-150"
-                onClick={() => setMobileProfileMenuOpen(false)}
-              >
-                <div
-                  className="w-14 max-h-56 mt-12 overflow-y-auto no-scrollbar rounded-2xl liquid-glass shadow-2xl p-2 flex flex-col items-center gap-3 animate-in zoom-in-95 duration-100"
-                  onClick={(e) => e.stopPropagation()}
-                >
-                  {/* Sync Icon */}
-                  <div
-                    className="p-2 rounded-xl bg-white/50 dark:bg-white/10 text-[var(--text-primary)] cursor-pointer"
-                    title={!isOnline ? "Offline Mode" : dataLoading ? "Syncing..." : "Database Synced"}
+            {mounted && createPortal(
+              <AnimatePresence>
+                {mobileProfileMenuOpen && (
+                  <motion.div
+                    key="mobile-profile-menu-backdrop"
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                    transition={{ duration: 0.2, ease: [0.16, 1, 0.3, 1] }}
+                    className="fixed inset-0 z-[100] bg-slate-950/35 backdrop-blur-[4px] flex items-start justify-end p-4"
+                    onClick={() => setMobileProfileMenuOpen(false)}
                   >
-                    {!isOnline ? (
-                      <WifiOff className="w-4 h-4 text-amber-500" />
-                    ) : dataLoading ? (
-                      <RefreshCw className="w-4 h-4 text-blue-500 animate-spin" />
-                    ) : (
-                      <CheckCircle2 className="w-4 h-4 text-emerald-500" />
-                    )}
-                  </div>
+                    <motion.div
+                      key="mobile-profile-menu-panel"
+                      initial={{ opacity: 0, scale: 0.9, y: -10 }}
+                      animate={{ opacity: 1, scale: 1, y: 0 }}
+                      exit={{ opacity: 0, scale: 0.9, y: -10 }}
+                      transition={{ duration: 0.2, ease: [0.16, 1, 0.3, 1] }}
+                      className="w-14 max-h-56 mt-14 overflow-y-auto no-scrollbar rounded-2xl liquid-glass shadow-2xl p-2 flex flex-col items-center gap-3"
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      {/* Sync Icon */}
+                      <div
+                        className="p-2 rounded-xl bg-white/50 dark:bg-white/10 text-[var(--text-primary)] cursor-pointer"
+                        title={!isOnline ? "Offline Mode" : dataLoading ? "Syncing..." : "Database Synced"}
+                      >
+                        {!isOnline ? (
+                          <WifiOff className="w-4 h-4 text-amber-500" />
+                        ) : dataLoading ? (
+                          <RefreshCw className="w-4 h-4 text-blue-500 animate-spin" />
+                        ) : (
+                          <CheckCircle2 className="w-4 h-4 text-emerald-500" />
+                        )}
+                      </div>
 
-                  {/* Bell Icon */}
-                  <button
-                    onClick={() => {
-                      setMobileProfileMenuOpen(false);
-                      setNotificationsOpen(true);
-                    }}
-                    className="p-2 rounded-xl text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-white/50 dark:hover:bg-white/10 transition-colors relative cursor-pointer"
-                    title="Notifications"
-                  >
-                    <Bell className="w-4 h-4" />
-                    {hasNotifications && (
-                      <span className="absolute top-1 right-1 w-2 h-2 rounded-full bg-emerald-500" />
-                    )}
-                  </button>
+                      {/* Bell Icon */}
+                      <button
+                        onClick={() => {
+                          setMobileProfileMenuOpen(false);
+                          setNotificationsOpen(true);
+                        }}
+                        className="p-2 rounded-xl text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-white/50 dark:hover:bg-white/10 transition-colors relative cursor-pointer"
+                        title="Notifications"
+                      >
+                        <Bell className="w-4 h-4" />
+                        {hasNotifications && (
+                          <span className="absolute top-1 right-1 w-2 h-2 rounded-full bg-emerald-500" />
+                        )}
+                      </button>
 
-                  {/* Help Icon */}
-                  <button
-                    onClick={() => {
-                      setMobileProfileMenuOpen(false);
-                      onShowHelp();
-                    }}
-                    className="p-2 rounded-xl text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-white/50 dark:hover:bg-white/10 transition-colors cursor-pointer"
-                    title="Help & Guide"
-                  >
-                    <CircleHelp className="w-4 h-4" />
-                  </button>
+                      {/* Help Icon */}
+                      <button
+                        onClick={() => {
+                          setMobileProfileMenuOpen(false);
+                          onShowHelp();
+                        }}
+                        className="p-2 rounded-xl text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-white/50 dark:hover:bg-white/10 transition-colors cursor-pointer"
+                        title="Help & Guide"
+                      >
+                        <CircleHelp className="w-4 h-4" />
+                      </button>
 
-                  {/* Theme Toggle Icon */}
-                  <button
-                    onClick={toggleTheme}
-                    className="p-2 rounded-xl text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-white/50 dark:hover:bg-white/10 transition-colors cursor-pointer"
-                    title="Toggle Theme"
-                  >
-                    {theme === "dark" ? <Sun className="w-4 h-4 text-gold-400" /> : <Moon className="w-4 h-4" />}
-                  </button>
+                      {/* Theme Toggle Icon */}
+                      <button
+                        onClick={toggleTheme}
+                        className="p-2 rounded-xl text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-white/50 dark:hover:bg-white/10 transition-colors cursor-pointer"
+                        title="Toggle Theme"
+                      >
+                        {theme === "dark" ? <Sun className="w-4 h-4 text-gold-400" /> : <Moon className="w-4 h-4" />}
+                      </button>
 
-                  {/* Sign Out Icon */}
-                  <button
-                    onClick={() => {
-                      setMobileProfileMenuOpen(false);
-                      onSignOut();
-                    }}
-                    className="p-2 rounded-xl text-[var(--text-muted)] hover:text-rose-600 hover:bg-rose-500/10 transition-colors cursor-pointer"
-                    title="Sign Out"
-                  >
-                    <LogOut className="w-4 h-4 text-rose-500" />
-                  </button>
-                </div>
-              </div>
+                      {/* Sign Out Icon */}
+                      <button
+                        onClick={() => {
+                          setMobileProfileMenuOpen(false);
+                          onSignOut();
+                        }}
+                        className="p-2 rounded-xl text-[var(--text-muted)] hover:text-rose-600 hover:bg-rose-500/10 transition-colors cursor-pointer"
+                        title="Sign Out"
+                      >
+                        <LogOut className="w-4 h-4 text-rose-500" />
+                      </button>
+                    </motion.div>
+                  </motion.div>
+                )}
+              </AnimatePresence>,
+              document.body
             )}
           </div>
 
           {/* Activity Notifications Modal Overlay & Liquid Glass Panel */}
-          {notificationsOpen && (
-            <div
-              className="fixed inset-0 z-50 bg-slate-950/50 backdrop-blur-lg flex items-start justify-end p-3 sm:p-6 animate-in fade-in duration-150"
-              onClick={() => setNotificationsOpen(false)}
-            >
-              <div
-                className="w-[min(28rem,calc(100vw-1.5rem))] max-h-[80vh] mt-12 overflow-hidden rounded-2xl liquid-glass animate-in zoom-in-95 duration-150 shadow-2xl"
-                onClick={(e) => e.stopPropagation()}
-              >
-                <div className="flex items-center justify-between border-b border-white/50 dark:border-white/10 px-4 py-3 bg-white/30 dark:bg-white/5">
-                  <div>
-                    <h2 className="text-sm font-bold text-[var(--text-primary)] flex items-center gap-2">
-                      Activity Log
-                      {visibleLogs.length > 0 && (
-                        <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-blue-500/20 text-blue-600 dark:text-blue-400 border border-blue-500/30">
-                          {visibleLogs.length}
-                        </span>
-                      )}
-                    </h2>
-                    <p className="text-[11px] text-[var(--text-muted)]">
-                      {userProfile?.role === "SUPER_ADMIN" ? "All system activity" : "Your assigned activity"}
-                    </p>
-                  </div>
-                  <div className="flex items-center gap-1.5">
-                    {visibleLogs.length > 0 && (
-                      <>
+          {mounted && createPortal(
+            <AnimatePresence>
+              {notificationsOpen && (
+                <motion.div
+                  key="notifications-drawer-backdrop"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  transition={{ duration: 0.2, ease: [0.16, 1, 0.3, 1] }}
+                  className="fixed inset-0 z-[100] bg-slate-950/35 backdrop-blur-[4px] flex items-start justify-end p-3 sm:p-6"
+                  onClick={() => setNotificationsOpen(false)}
+                >
+                  <motion.div
+                    key="notifications-drawer-panel"
+                    initial={{ opacity: 0, scale: 0.93, y: -10 }}
+                    animate={{ opacity: 1, scale: 1, y: 0 }}
+                    exit={{ opacity: 0, scale: 0.93, y: -10 }}
+                    transition={{ duration: 0.2, ease: [0.16, 1, 0.3, 1] }}
+                    className="w-[min(28rem,calc(100vw-1.5rem))] max-h-[80vh] mt-14 overflow-hidden rounded-2xl liquid-glass shadow-2xl"
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    <div className="flex items-center justify-between border-b border-white/50 dark:border-white/10 px-4 py-3 bg-white/30 dark:bg-white/5">
+                      <div>
+                        <h2 className="text-sm font-bold text-[var(--text-primary)] flex items-center gap-2">
+                          Activity Log
+                          {visibleLogs.length > 0 && (
+                            <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-blue-500/20 text-blue-600 dark:text-blue-400 border border-blue-500/30">
+                              {visibleLogs.length}
+                            </span>
+                          )}
+                        </h2>
+                        <p className="text-[11px] text-[var(--text-muted)]">
+                          {userProfile?.role === "SUPER_ADMIN" ? "All system activity" : "Your assigned activity"}
+                        </p>
+                      </div>
+                      <div className="flex items-center gap-1.5">
+                        {visibleLogs.length > 0 && (
+                          <>
+                            <button
+                              type="button"
+                              onClick={handleMarkAllRead}
+                              className="text-[11px] font-semibold text-blue-600 dark:text-gold-400 hover:underline px-2 py-1 rounded-lg hover:bg-white/50 dark:hover:bg-white/10 cursor-pointer"
+                              title="Mark all as read"
+                            >
+                              Mark read
+                            </button>
+                            <button
+                              type="button"
+                              onClick={handleClearAll}
+                              className="text-[11px] font-semibold text-rose-600 dark:text-rose-400 hover:underline px-2 py-1 rounded-lg hover:bg-rose-500/10 cursor-pointer"
+                              title="Clear all notifications"
+                            >
+                              Clear all
+                            </button>
+                          </>
+                        )}
                         <button
-                          type="button"
-                          onClick={handleMarkAllRead}
-                          className="text-[11px] font-semibold text-blue-600 dark:text-gold-400 hover:underline px-2 py-1 rounded-lg hover:bg-white/50 dark:hover:bg-white/10 cursor-pointer"
-                          title="Mark all as read"
+                          onClick={() => setNotificationsOpen(false)}
+                          className="rounded-lg p-1.5 text-[var(--text-muted)] hover:bg-white/50 dark:hover:bg-white/10 cursor-pointer"
                         >
-                          Mark read
+                          <X className="h-4 w-4" />
                         </button>
-                        <button
-                          type="button"
-                          onClick={handleClearAll}
-                          className="text-[11px] font-semibold text-rose-600 dark:text-rose-400 hover:underline px-2 py-1 rounded-lg hover:bg-rose-500/10 cursor-pointer"
-                          title="Clear all notifications"
-                        >
-                          Clear all
-                        </button>
-                      </>
-                    )}
-                    <button
-                      onClick={() => setNotificationsOpen(false)}
-                      className="rounded-lg p-1.5 text-[var(--text-muted)] hover:bg-white/50 dark:hover:bg-white/10 cursor-pointer"
-                    >
-                      <X className="h-4 w-4" />
-                    </button>
-                  </div>
-                </div>
+                      </div>
+                    </div>
 
-                <div className="max-h-[calc(80vh-4rem)] overflow-y-auto no-scrollbar">
-                  {loading ? (
-                    <p className="p-6 text-center text-sm text-[var(--text-muted)]">Loading activity feed…</p>
-                  ) : error ? (
-                    <p role="alert" className="p-6 text-center text-sm text-rose-600">{error}</p>
-                  ) : visibleLogs.length === 0 ? (
-                    <p className="p-6 text-center text-sm text-[var(--text-muted)]">No activity logs recorded.</p>
-                  ) : (
-                    visibleLogs.map((log) => (
-                      <article key={log.id} className="border-b border-white/30 dark:border-white/5 px-4 py-3 last:border-0 hover:bg-white/30 dark:hover:bg-white/5 transition-colors">
-                        <div className="flex items-start justify-between gap-3">
-                          <p className="text-xs font-semibold leading-5 text-[var(--text-primary)]">{log.details}</p>
-                          <span className="shrink-0 rounded bg-white/60 dark:bg-white/10 px-1.5 py-0.5 text-[10px] text-[var(--text-muted)] font-mono border border-white/40 dark:border-white/10">
-                            {log.action.replaceAll("_", " ").toLowerCase()}
-                          </span>
-                        </div>
-                        <div className="mt-1 flex items-center gap-1 text-[10px] text-[var(--text-muted)]">
-                          <Clock3 className="h-3 w-3" />
-                          {log.actorName || log.actorEmail} · {formatTime(log.timestamp)}
-                        </div>
-                      </article>
-                    ))
-                  )}
-                </div>
-              </div>
-            </div>
+                    <div className="max-h-[calc(80vh-4rem)] overflow-y-auto no-scrollbar p-3 space-y-2">
+                      {loading ? (
+                        <p className="p-6 text-center text-sm text-[var(--text-muted)]">Loading activity feed…</p>
+                      ) : error ? (
+                        <p role="alert" className="p-6 text-center text-sm text-rose-600">{error}</p>
+                      ) : visibleLogs.length === 0 ? (
+                        <p className="p-6 text-center text-sm text-[var(--text-muted)]">No activity logs recorded.</p>
+                      ) : (
+                        visibleLogs.map((log) => (
+                          <article
+                            key={log.id}
+                            className="p-3 rounded-xl border border-white/50 dark:border-white/15 bg-white/40 dark:bg-white/10 backdrop-blur-md hover:bg-white/60 dark:hover:bg-white/20 transition-all shadow-sm flex flex-col gap-1.5 group"
+                          >
+                            <div className="flex items-start justify-between gap-3">
+                              <p className="text-xs font-semibold leading-relaxed text-[var(--text-primary)] group-hover:text-blue-600 dark:group-hover:text-gold-400 transition-colors">
+                                {log.details}
+                              </p>
+                              <span className="shrink-0 rounded-lg bg-blue-500/15 text-blue-600 dark:text-blue-400 dark:bg-blue-400/15 px-2 py-0.5 text-[10px] font-bold font-mono border border-blue-500/30">
+                                {log.action.replaceAll("_", " ").toLowerCase()}
+                              </span>
+                            </div>
+                            <div className="flex items-center gap-1.5 text-[10px] font-medium text-[var(--text-muted)]">
+                              <Clock3 className="h-3 w-3 text-gold-500 dark:text-gold-400 flex-shrink-0" />
+                              <span className="truncate">{log.actorName || log.actorEmail}</span>
+                              <span>•</span>
+                              <span className="shrink-0">{formatTime(log.timestamp)}</span>
+                            </div>
+                          </article>
+                        ))
+                      )}
+                    </div>
+                  </motion.div>
+                </motion.div>
+              )}
+            </AnimatePresence>,
+            document.body
           )}
 
         </div>
