@@ -1,4 +1,3 @@
-import * as XLSX from "xlsx";
 import { auditAssetCompleteness } from "./completenessAuditor";
 import { MissingDetailAlert } from "@/types/completeness";
 import { StaffMember, PhysicalAsset, DigitalCredential, WorkbookDocument, FacilityItem } from "@/types/assets";
@@ -20,7 +19,8 @@ export interface ParsedWorkbookData {
   parseIssues?: { sheet: string; row: number; message: string }[];
 }
 
-export function parseBasechanWorkbook(buffer: ArrayBuffer): ParsedWorkbookData {
+export async function parseBasechanWorkbook(buffer: ArrayBuffer): Promise<ParsedWorkbookData> {
+  const XLSX = await import("xlsx");
   const workbook = XLSX.read(buffer, { type: "array" });
   const result: ParsedWorkbookData = {
     stats: { staffCount: 0, physicalCount: 0, digitalCount: 0, workbookCount: 0, facilityCount: 0 },
@@ -60,172 +60,164 @@ export function parseBasechanWorkbook(buffer: ArrayBuffer): ParsedWorkbookData {
     return `${prefix}-${String(Number.isInteger(sourceNumber) && sourceNumber > 0 ? sourceNumber : index + 1).padStart(3, "0")}`;
   };
 
-  const addSheetMappingDiagnostics = (sheetName: string, rows: Record<string, any>[], knownHeaders: string[]) => {
+  const normalizeSheetName = (sheetName: string) => sheetName.normalize("NFKC").toLowerCase().replace(/[^a-z0-9]/g, "");
+  const chooseSheet = (aliases: string[], expectedHeaderGroups: string[][]) => {
+    const sheets = workbook.SheetNames;
+    for (const alias of aliases) {
+      const match = sheets.find(s => normalizeSheetName(s) === normalizeSheetName(alias));
+      if (match) return match;
+    }
+    for (const sheet of sheets) {
+      const rows = XLSX.utils.sheet_to_json<Record<string, any>>(workbook.Sheets[sheet], { header: 1 });
+      const firstRow = rows.find(r => Array.isArray(r) && r.some(cell => cell !== null && cell !== undefined && String(cell).trim() !== ""));
+      if (!firstRow) continue;
+      const headers = firstRow.map((h: any) => String(h || "").toLowerCase());
+      const matchesGroup = expectedHeaderGroups.some(group => group.every(expected => headers.some((h: string) => h.includes(expected.toLowerCase()))));
+      if (matchesGroup) return sheet;
+    }
+    return null;
+  };
+
+  const reportMissingSheet = (label: string) => {
+    result.parseIssues?.push({
+      sheet: label,
+      row: 1,
+      message: `Could not locate a sheet for "${label}".`
+    });
+  };
+
+  const addSheetMappingDiagnostics = (sheetName: string, rows: Record<string, any>[], expectedColumns: string[]) => {
+    if (!rows || rows.length === 0) {
+      result.parseIssues?.push({ sheet: sheetName, row: 1, message: `Sheet "${sheetName}" contains no readable data rows.` });
+      return;
+    }
+    const rowKeys = Object.keys(rows[0] || {});
     const normalize = (value: string) => value.normalize("NFKC").toLowerCase().replace(/[^a-z0-9]/g, "");
-    const known = new Set(knownHeaders.map(normalize));
-    const headers = Object.keys(rows[0] || {});
-    const unknown = headers.filter((header) => !known.has(normalize(header)) && rows.some((row) => row[header] !== null && row[header] !== undefined && String(row[header]).trim() !== ""));
-    if (unknown.length) result.parseIssues?.push({ sheet: sheetName, row: 1, message: `Unmapped populated column(s): ${unknown.join(", ")}.` });
+    const missing = expectedColumns.filter(col => !rowKeys.some(k => normalize(k) === normalize(col)));
+    if (missing.length > 0) {
+      result.parseIssues?.push({
+        sheet: sheetName,
+        row: 1,
+        message: `Expected columns were missing or unrecognized: ${missing.join(", ")}.`
+      });
+    }
   };
 
-  const chooseSheet = (aliases: string[], requiredHeaderGroups: string[][]) => workbook.SheetNames.find((name) => {
-    const normalizedName = name.normalize("NFKC").toLowerCase().replace(/[^a-z0-9]/g, "");
-    if (!aliases.some((alias) => normalizedName.includes(alias))) return false;
-    const headers = Object.keys(XLSX.utils.sheet_to_json<Record<string, any>>(workbook.Sheets[name], { defval: null })[0] || {}).map((header) => header.normalize("NFKC").toLowerCase().replace(/[^a-z0-9]/g, ""));
-    return requiredHeaderGroups.every((group) => group.some((candidate) => headers.includes(candidate.normalize("NFKC").toLowerCase().replace(/[^a-z0-9]/g, ""))));
-  });
-
-  const reportMissingSheet = (name: string) => {
-    result.parseIssues?.push({ sheet: name, row: 1, message: "Expected source worksheet or identifying headers were not found; this section was not parsed." });
-  };
-
-  // Helper map staff email to name
-  const staffEmailMap = new Map<string, string>();
-  const staffByName = new Map<string, StaffMember>();
-
-  // 1. Staff Inventory
-  const staffSheet = chooseSheet(["staff"], [["Staff Name", "Name"]]);
-  if (!staffSheet) reportMissingSheet("Staff Inventory");
+  // 1. Staff Directory
+  const staffSheet = chooseSheet(["staff", "personnel", "staff directory"], [["Full Name", "Name"]]);
+  if (!staffSheet) reportMissingSheet("Staff Directory");
   if (staffSheet) {
     const rows = XLSX.utils.sheet_to_json<any>(workbook.Sheets[staffSheet]);
-    addSheetMappingDiagnostics(staffSheet, rows, ["S/N", "Staff Name", "Department", "Position", "Employment Date", "Email", "Phone Number", "Registered Under", "Branch"]);
+    addSheetMappingDiagnostics(staffSheet, rows, ["S/N", "Full Name", "Email Address", "Department", "Position / Role", "Branch Location", "Phone Number"]);
     rows.forEach((r, idx) => {
-      const name = findVal(r, ["Staff Name", "Name", "Staff"]);
-      const email = findVal(r, ["Email", "Email Address"]);
+      const name = findVal(r, ["Full Name", "Name", "Staff Name"]);
       if (name) {
-        const cleanName = String(name).trim();
-        const cleanEmail = email ? String(email).trim().toLowerCase() : "";
-        if (cleanEmail) staffEmailMap.set(cleanName.toLowerCase(), cleanEmail);
-
-        const member: StaffMember = {
+        result.staff.push({
           id: serialId("STF", r, idx),
           sn: findVal(r, ["S/N", "SN", "No"]) || idx + 1,
-          name: cleanName,
-          email: cleanEmail,
+          name: String(name).trim(),
+          email: asText(findVal(r, ["Email Address", "Email", "Corporate Email"])).toLowerCase(),
           department: String(findVal(r, ["Department", "Dept"]) || "Operations").trim(),
-          position: String(findVal(r, ["Position", "Role"]) || "Staff").trim(),
-          branch: String(findVal(r, ["Branch", "Location"]) || "Abuja Branch").trim(),
-          phone: String(findVal(r, ["Phone Number", "Phone"]) || "").trim(),
-          registeredUnder: String(findVal(r, ["Registered Under"]) || "").trim(),
-          employmentDate: asText(findVal(r, ["Employment Date"]), true)
-        };
-
-        result.staff.push(member);
-        staffByName.set(cleanName.toLowerCase(), member);
-
-        // Index individual name tokens (e.g., "jumai" -> member) so short names like "JUMAI" map to "JUMAI ADAMU"
-        const tokens = cleanName.toLowerCase().split(/\s+/).filter(t => t.length >= 3);
-        tokens.forEach(t => {
-          if (!staffByName.has(t)) staffByName.set(t, member);
+          position: String(findVal(r, ["Position / Role", "Position", "Role", "Title"]) || "Staff").trim(),
+          branch: normalizeBranch(findVal(r, ["Branch Location", "Branch", "Location"])),
+          phone: asText(findVal(r, ["Phone Number", "Phone", "Mobile"]))
         });
-      } else result.parseIssues?.push({ sheet: staffSheet, row: idx + 2, message: "Missing staff name; row was skipped." });
+      } else {
+        result.parseIssues?.push({ sheet: staffSheet, row: idx + 2, message: "Row skipped because full name is required." });
+      }
     });
     result.stats.staffCount = result.staff.length;
   }
 
+  const staffByName = new Map(result.staff.map(s => [s.name.toLowerCase(), s]));
+
   // 2. Physical Hardware Assets
-  const physSheet = chooseSheet(["physical"], [["Category (Laptop/Monitor/Mobile)", "Category", "Make & Model", "Model"]]);
-  if (!physSheet) reportMissingSheet("Physical Assets");
-  if (physSheet) {
-    const rows = XLSX.utils.sheet_to_json<any>(workbook.Sheets[physSheet]);
-    addSheetMappingDiagnostics(physSheet, rows, ["S/N", "Asset Tag ID", "Category (Laptop/Monitor/Mobile)", "Make & Model", "Serial Number", "Assigned Staff", "Department", "Physical Location", "Purchase Date", "Condition", "Status (Active/Repair/Retired)"]);
+  const hwSheet = chooseSheet(["hardware", "assets", "physical assets"], [["Make & Model", "Model", "Device"]]);
+  if (!hwSheet) reportMissingSheet("Physical Hardware Assets");
+  if (hwSheet) {
+    const rows = XLSX.utils.sheet_to_json<any>(workbook.Sheets[hwSheet]);
+    addSheetMappingDiagnostics(hwSheet, rows, ["S/N", "Tag ID", "Serial Number", "Make & Model", "Category", "Assigned Custodian", "Condition", "Operational Status", "Purchase Date", "Branch Location"]);
     rows.forEach((r, idx) => {
-      const model = findVal(r, ["Make & Model", "Model", "Device"]);
-      const category = findVal(r, ["Category (Laptop/Monitor/Mobile)", "Category"]);
-      const tag = findVal(r, ["Asset Tag ID", "Tag ID", "Tag"]);
-      const assignedVal = findVal(r, ["Assigned Staff", "Staff"]);
+      const model = findVal(r, ["Make & Model", "Model", "Device Name", "Description"]);
+      if (model) {
+        const custodianName = String(findVal(r, ["Assigned Custodian", "Custodian", "Assigned Staff", "User"]) || "").trim();
+        const custodian = staffByName.get(custodianName.toLowerCase());
+        const rawSerial = asText(findVal(r, ["Serial Number", "Serial", "Service Tag", "SN"]));
+        const rawTag = asText(findVal(r, ["Tag ID", "Asset Tag", "Tag"]));
 
-      // A row represents an asset if model, category, tag, or assignedStaff is present
-      if (model || category || tag || assignedVal) {
-        const assignedStaff = String(assignedVal || "Unassigned").trim();
-        const assignedPerson = staffByName.get(assignedStaff.toLowerCase());
-        const staffEmail = assignedPerson?.email || staffEmailMap.get(assignedStaff.toLowerCase()) || "";
-        const makeModelVal = String(model || category || "Peripheral Hardware").trim();
-
-        const asset: PhysicalAsset = {
-          id: serialId("PA", r, idx),
+        const assetRecord: PhysicalAsset = {
+          id: serialId("AST", r, idx),
           sn: findVal(r, ["S/N", "SN", "No"]) || idx + 1,
-          tag: String(tag || `BAM-HW-${String(idx + 1).padStart(3, "0")}`).trim(),
-          category: String(category || "Hardware").trim(),
-          makeModel: makeModelVal,
-          serialNumber: String(findVal(r, ["Serial Number", "Serial", "S/N"]) || "").trim(),
-          assignedStaff: assignedPerson ? assignedPerson.name : assignedStaff,
-          assignedStaffEmail: staffEmail,
-          assignedStaffBranch: assignedPerson?.branch,
-          department: String(findVal(r, ["Department", "Dept"]) || assignedPerson?.department || "Operations").trim(),
-          branch: String(findVal(r, ["Physical Location", "Location", "Branch"]) || assignedPerson?.branch || "Abuja Branch").trim(),
-          purchaseDate: asText(findVal(r, ["Purchase Date"]), true),
+          tag: rawTag || `TAG-${String(idx + 1).padStart(3, "0")}`,
+          serialNumber: rawSerial,
+          makeModel: String(model).trim(),
+          category: String(findVal(r, ["Category", "Device Category"]) || "Laptop").trim(),
+          assignedStaff: custodianName || "Unassigned",
+          assignedStaffEmail: custodian?.email,
+          assignedStaffBranch: custodian?.branch,
+          department: custodian?.department || String(findVal(r, ["Department"]) || "Operations").trim(),
           condition: String(findVal(r, ["Condition"]) || "Good").trim(),
-          status: String(findVal(r, ["Status (Active/Repair/Retired)", "Status"]) || "Active").trim(),
-          isLocked: false,
-          customAttributes: {}
+          status: String(findVal(r, ["Operational Status", "Status"]) || "Active").trim(),
+          purchaseDate: asText(findVal(r, ["Purchase Date"]), true),
+          branch: normalizeBranch(findVal(r, ["Branch Location", "Branch", "Location"])),
+          isLocked: false
         };
 
-        result.physicalAssets.push(asset);
-
-        if (!model) result.parseIssues?.push({ sheet: physSheet, row: idx + 2, message: "Missing make/model; parser used the category as a placeholder." });
-
-        const alert = auditAssetCompleteness(asset);
-        if (alert) result.missingDetailAlerts.push(alert);
+        const auditAlert = auditAssetCompleteness(assetRecord);
+        if (auditAlert) {
+          result.missingDetailAlerts.push(auditAlert);
+        }
+        result.physicalAssets.push(assetRecord);
+      } else {
+        result.parseIssues?.push({ sheet: hwSheet, row: idx + 2, message: "Missing make/model description; row was skipped." });
       }
     });
     result.stats.physicalCount = result.physicalAssets.length;
   }
 
-  // 3. Digital Credentials
-  const digitalSheet = chooseSheet(["digital", "accounts"], [["Platform / Software", "Platform", "Software"]]);
-  if (!digitalSheet) reportMissingSheet("Digital & Accounts");
-  if (digitalSheet) {
-    const rows = XLSX.utils.sheet_to_json<any>(workbook.Sheets[digitalSheet]);
-    addSheetMappingDiagnostics(digitalSheet, rows, ["S/N", "Platform / Software", "Account / Login Email", "Sub-Agent / Handle ID", "Assigned User", "User Role", "Passwords", "Password Vault Status"]);
+  // 3. Digital Credentials Vault
+  const credSheet = chooseSheet(["credentials", "digital credentials", "passwords"], [["Platform / Resource", "Platform", "Resource"]]);
+  if (!credSheet) reportMissingSheet("Digital Credentials Vault");
+  if (credSheet) {
+    const rows = XLSX.utils.sheet_to_json<any>(workbook.Sheets[credSheet]);
+    addSheetMappingDiagnostics(credSheet, rows, ["S/N", "Vault ID", "Platform / Resource", "Category (Sub-Agent/OAuth/SaaS)", "Bound Staff Email", "Vault Status", "Security Level"]);
     rows.forEach((r, idx) => {
-      const platform = findVal(r, ["Platform / Software", "Platform", "Software"]);
-      const handle = findVal(r, ["Sub-Agent / Handle ID", "Handle ID"]);
-      const login = findVal(r, ["Account / Login Email", "Email", "Account"]);
-      const assigned = findVal(r, ["Assigned User", "User"]);
-      if (platform || handle || login || assigned || findVal(r, ["Passwords", "Password"])) {
-        const assignedUser = String(findVal(r, ["Assigned User", "User"]) || "Unassigned").trim();
-        const userEmail = staffEmailMap.get(assignedUser.toLowerCase()) || "";
-        const assignedPerson = staffByName.get(assignedUser.toLowerCase());
-        const platformName = asText(platform) || `Unlabeled credential · row ${asText(findVal(r, ["S/N", "SN", "No"]) || idx + 1)}`;
-
+      const platformName = findVal(r, ["Platform / Resource", "Platform", "Resource Name", "Service"]);
+      if (platformName) {
+        const assignedEmail = asText(findVal(r, ["Bound Staff Email", "Assigned User", "Email"])).toLowerCase();
+        const assignedUser = Array.from(staffByName.values()).find(s => s.email.toLowerCase() === assignedEmail);
+        const rawStatus = String(findVal(r, ["Vault Status", "Status"]) || "SECURED").trim().toUpperCase();
         result.digitalCredentials.push({
-          id: serialId("DC", r, idx),
+          id: serialId("CRD", r, idx),
           sn: findVal(r, ["S/N", "SN", "No"]) || idx + 1,
-          platform: platformName,
-          loginEmail: asText(login),
-          subAgentHandleId: asText(handle),
-          assignedUser: assignedUser,
-          assignedUserEmail: userEmail,
-          assignedUserBranch: assignedPerson?.branch,
-          userRole: String(findVal(r, ["User Role", "Role"]) || "User").trim(),
-          rawPass: String(findVal(r, ["Passwords", "Password"]) || "").trim(),
-          passwordVaultLocation: asText(findVal(r, ["Password Vault Status", "Vault Status", "Password Storage"])),
-          // This describes whether the app protects the secret, not the external source's label/provider.
-          vaultStatus: "SECURED"
+          platform: String(platformName).trim(),
+          loginEmail: assignedEmail,
+          assignedUser: assignedUser?.name || "Assigned User",
+          assignedUserEmail: assignedEmail,
+          assignedUserBranch: assignedUser?.branch,
+          vaultStatus: rawStatus === "UNRESTRICTED" ? "UNRESTRICTED" : "SECURED"
         });
-        if (!platform) result.parseIssues?.push({ sheet: digitalSheet, row: idx + 2, message: `Missing platform; retained under placeholder “${platformName}”.` });
-      } else result.parseIssues?.push({ sheet: digitalSheet, row: idx + 2, message: "Empty credential row; skipped because it contains no record details." });
+      } else result.parseIssues?.push({ sheet: credSheet, row: idx + 2, message: "Missing platform name; credential record skipped." });
     });
     result.stats.digitalCount = result.digitalCredentials.length;
   }
 
-  // 4. Data Workbooks
-  const wbSheet = chooseSheet(["workbook", "data"], [["Workbook / Doc Title", "Title", "Doc Title"]]);
-  if (!wbSheet) reportMissingSheet("Data & Workbooks");
+  // 4. Data Workbooks Register
+  const wbSheet = chooseSheet(["workbooks", "documents", "files"], [["Workbook Title", "Title", "Document"]]);
+  if (!wbSheet) reportMissingSheet("Data Workbooks Register");
   if (wbSheet) {
     const rows = XLSX.utils.sheet_to_json<any>(workbook.Sheets[wbSheet]);
-    addSheetMappingDiagnostics(wbSheet, rows, ["S/N", "Workbook / Doc Title", "Business Function", "Cloud Storage Link (URL)", "Primary File Owner", "Department", "Access Permissions", "Last Audit Date"]);
+    addSheetMappingDiagnostics(wbSheet, rows, ["S/N", "Workbook Title", "Business Function", "Primary Owner", "Department", "Cloud Link", "Access Permissions", "Last Audit Date"]);
     rows.forEach((r, idx) => {
-      const title = findVal(r, ["Workbook / Doc Title", "Title", "Doc Title"]);
-      const url = findVal(r, ["Cloud Storage Link (URL)", "Link", "URL"]);
-      const businessFunction = findVal(r, ["Business Function"]);
-      if (title || url || businessFunction || findVal(r, ["Primary File Owner", "Owner"])) {
-        const ownerName = String(findVal(r, ["Primary File Owner", "Owner"]) || "Basechan").trim();
+      const title = findVal(r, ["Workbook Title", "Title", "Document Name"]);
+      const businessFunction = findVal(r, ["Business Function", "Function"]);
+      const url = findVal(r, ["Cloud Link", "URL", "Link", "OneDrive/Drive Link"]);
+      if (title || businessFunction || url) {
+        const ownerName = String(findVal(r, ["Primary Owner", "Owner"]) || "").trim();
         const owner = staffByName.get(ownerName.toLowerCase());
-        const workbookTitle = asText(title) || `Untitled workbook · row ${asText(findVal(r, ["S/N", "SN", "No"]) || idx + 1)}`;
+        const workbookTitle = title ? String(title).trim() : `Workbook Document #${idx + 1}`;
         result.workbooks.push({
-          id: serialId("WB", r, idx),
+          id: serialId("WBK", r, idx),
           sn: findVal(r, ["S/N", "SN", "No"]) || idx + 1,
           title: workbookTitle,
           businessFunction: asText(businessFunction),
@@ -287,9 +279,10 @@ function normalizeBranch(value: unknown): string {
 }
 
 /**
- * Exports data to an Excel file using SheetJS
+ * Exports data to an Excel file using SheetJS lazily
  */
-export function exportToExcel(data: any[], fileName: string, sheetName: string = "Export") {
+export async function exportToExcel(data: any[], fileName: string, sheetName: string = "Export") {
+  const XLSX = await import("xlsx");
   const ws = XLSX.utils.json_to_sheet(data);
   const wb = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb, ws, sheetName);

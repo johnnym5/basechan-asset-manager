@@ -83,10 +83,10 @@ export const IngestionTab: React.FC<IngestionTabProps> = ({ currentStats, curren
     setStatusMessage({ type: "info", text: `Parsing ${file.name}...` });
 
     const reader = new FileReader();
-    reader.onload = (event) => {
+    reader.onload = async (event) => {
       try {
         const buffer = event.target?.result as ArrayBuffer;
-        const parsed = parseBasechanWorkbook(buffer);
+        const parsed = await parseBasechanWorkbook(buffer);
         setParsedPreview(parsed);
 
         setStatusMessage({ type: "success", text: `Parsed ${file.name}: ${parsed.physicalAssets.length} hardware assets, ${parsed.staff.length} staff, ${parsed.digitalCredentials.length} credentials, ${parsed.workbooks.length} workbooks, and ${parsed.facilities.length} facility items. Rows marked with completeness warnings remain importable.` });

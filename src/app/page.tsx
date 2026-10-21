@@ -115,30 +115,27 @@ const TAB_ORDER: TabKey[] = [
 const TAB_PAGE_VARIANTS: Variants = {
   initial: (custom: { direction: number; isMobile: boolean }) => ({
     opacity: 0,
-    x: custom.isMobile ? custom.direction * 75 : 0,
-    y: custom.isMobile ? 0 : custom.direction * 55,
-    filter: "blur(6px)",
-    scale: 0.985,
+    x: custom.isMobile ? custom.direction * 35 : 0,
+    y: custom.isMobile ? 0 : custom.direction * 25,
+    scale: 0.99,
   }),
   animate: {
     opacity: 1,
     x: 0,
     y: 0,
-    filter: "blur(0px)",
     scale: 1,
     transition: {
-      duration: 0.35,
+      duration: 0.25,
       ease: [0.16, 1, 0.3, 1] as const,
     },
   },
   exit: (custom: { direction: number; isMobile: boolean }) => ({
     opacity: 0,
-    x: custom.isMobile ? -custom.direction * 75 : 0,
-    y: custom.isMobile ? 0 : -custom.direction * 55,
-    filter: "blur(6px)",
-    scale: 0.985,
+    x: custom.isMobile ? -custom.direction * 35 : 0,
+    y: custom.isMobile ? 0 : -custom.direction * 25,
+    scale: 0.99,
     transition: {
-      duration: 0.22,
+      duration: 0.18,
       ease: [0.7, 0, 0.84, 0] as const,
     },
   }),
