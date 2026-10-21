@@ -23,6 +23,8 @@ import {
   X,
   ChevronUp,
 } from "lucide-react";
+import { AnimatePresence, motion } from "framer-motion";
+import { DRAWER_VARIANTS, MODAL_BACKDROP_VARIANTS, SPRING_TRANSITION } from "@/lib/motion";
 import { useAuth } from "@/context/AuthContext";
 import { PageAccess } from "@/lib/accessControl";
 
@@ -227,9 +229,16 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeTab, onSelectTab, missin
                 : "p-2.5 text-slate-400 hover:text-white rounded-full"
             }`}
           >
+            {selected && (
+              <motion.div
+                layoutId="mobileActiveDockPill"
+                className="absolute inset-0 bg-blue-600 rounded-full -z-10"
+                transition={SPRING_TRANSITION}
+              />
+            )}
             <Icon className="h-5 w-5 shrink-0" />
             {selected && (
-              <span className="text-xs font-bold whitespace-nowrap animate-in fade-in zoom-in duration-150">
+              <span className="text-xs font-bold whitespace-nowrap">
                 {item.key === "hardware" ? "Assets" : item.key === "overview" ? "Home" : item.key === "credentials" ? "Vault" : "Reports"}
               </span>
             )}
@@ -258,72 +267,82 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeTab, onSelectTab, missin
       </button>
     </nav>
 
-    {/* Quick Module Bottom Sheet Drawer */}
-    {mobileDrawerOpen && (
-      <div
-        className="fixed inset-0 z-50 bg-slate-950/60 backdrop-blur-sm md:hidden animate-in fade-in duration-150 flex flex-col justify-end"
-        onClick={() => setMobileDrawerOpen(false)}
-      >
-        <div
-          className="bg-[var(--bg-surface)] border-t border-[var(--border)] rounded-t-3xl p-5 shadow-2xl max-h-[85vh] overflow-y-auto space-y-4 animate-in slide-in-from-bottom duration-200"
-          onClick={(e) => e.stopPropagation()}
+    {/* Quick Module Bottom Sheet Drawer with AnimatePresence Exit Animations */}
+    <AnimatePresence>
+      {mobileDrawerOpen && (
+        <motion.div
+          key="mobile-drawer-overlay"
+          initial="hidden"
+          animate="visible"
+          exit="exit"
+          variants={MODAL_BACKDROP_VARIANTS}
+          className="fixed inset-0 z-50 bg-slate-950/60 backdrop-blur-sm md:hidden flex flex-col justify-end"
+          onClick={() => setMobileDrawerOpen(false)}
         >
-          {/* Top Drag Handle & Header */}
-          <div className="space-y-3">
-            <div className="w-12 h-1 rounded-full bg-[var(--border)] mx-auto" />
-            <div className="flex items-center justify-between">
-              <div>
-                <h2 className="text-base font-bold text-[var(--text-primary)]">Enterprise Modules</h2>
-                <p className="text-xs text-[var(--text-muted)]">Select any workspace tool or report view</p>
-              </div>
-              <button
-                onClick={() => setMobileDrawerOpen(false)}
-                className="p-2 rounded-xl text-[var(--text-muted)] hover:bg-[var(--bg-muted)] hover:text-[var(--text-primary)]"
-              >
-                <X className="h-4 w-4" />
-              </button>
-            </div>
-          </div>
-
-          {/* 2-Column Grid of All Accessible Modules */}
-          <div className="grid grid-cols-2 gap-2.5 pt-1">
-            {visibleItems.map((item) => {
-              const Icon = item.icon;
-              const selected = activeTab === item.key;
-              return (
+          <motion.div
+            key="mobile-drawer-panel"
+            variants={DRAWER_VARIANTS}
+            transition={SPRING_TRANSITION}
+            className="bg-[var(--bg-surface)] border-t border-[var(--border)] rounded-t-3xl p-5 shadow-2xl max-h-[85vh] overflow-y-auto space-y-4"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Top Drag Handle & Header */}
+            <div className="space-y-3">
+              <div className="w-12 h-1 rounded-full bg-[var(--border)] mx-auto" />
+              <div className="flex items-center justify-between">
+                <div>
+                  <h2 className="text-base font-bold text-[var(--text-primary)]">Enterprise Modules</h2>
+                  <p className="text-xs text-[var(--text-muted)]">Select any workspace tool or report view</p>
+                </div>
                 <button
-                  key={item.key}
-                  type="button"
-                  onClick={() => {
-                    onSelectTab(item.key);
-                    setMobileDrawerOpen(false);
-                  }}
-                  className={`flex flex-col items-start gap-2 p-3 rounded-2xl border text-left transition-all ${
-                    selected
-                      ? "border-blue-600 bg-blue-500/10 text-blue-600 dark:text-gold-400 font-bold shadow-sm"
-                      : "border-[var(--border)] bg-[var(--bg-primary)] text-[var(--text-primary)] hover:bg-[var(--bg-muted)]"
-                  }`}
+                  onClick={() => setMobileDrawerOpen(false)}
+                  className="p-2 rounded-xl text-[var(--text-muted)] hover:bg-[var(--bg-muted)] hover:text-[var(--text-primary)]"
                 >
-                  <div className="flex items-center justify-between w-full">
-                    <div className={`p-2 rounded-xl ${selected ? "bg-blue-600 text-white" : "bg-[var(--bg-muted)] text-[var(--text-muted)]"}`}>
-                      <Icon className="h-4 w-4" />
-                    </div>
-                    {item.badge !== undefined && (
-                      <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${item.badgeColor || "bg-amber-100 text-amber-800 border-amber-200"}`}>
-                        {item.badge}
-                      </span>
-                    )}
-                  </div>
-                  <span className="text-xs font-bold leading-tight">
-                    {labelFor(item.key, item.label)}
-                  </span>
+                  <X className="h-4 w-4" />
                 </button>
-              );
-            })}
-          </div>
-        </div>
-      </div>
-    )}
+              </div>
+            </div>
+
+            {/* 2-Column Grid of All Accessible Modules */}
+            <div className="grid grid-cols-2 gap-2.5 pt-1">
+              {visibleItems.map((item) => {
+                const Icon = item.icon;
+                const selected = activeTab === item.key;
+                return (
+                  <button
+                    key={item.key}
+                    type="button"
+                    onClick={() => {
+                      onSelectTab(item.key);
+                      setMobileDrawerOpen(false);
+                    }}
+                    className={`flex flex-col items-start gap-2 p-3 rounded-2xl border text-left transition-all ${
+                      selected
+                        ? "border-blue-600 bg-blue-500/10 text-blue-600 dark:text-gold-400 font-bold shadow-sm"
+                        : "border-[var(--border)] bg-[var(--bg-primary)] text-[var(--text-primary)] hover:bg-[var(--bg-muted)]"
+                    }`}
+                  >
+                    <div className="flex items-center justify-between w-full">
+                      <div className={`p-2 rounded-xl ${selected ? "bg-blue-600 text-white" : "bg-[var(--bg-muted)] text-[var(--text-muted)]"}`}>
+                        <Icon className="h-4 w-4" />
+                      </div>
+                      {item.badge !== undefined && (
+                        <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${item.badgeColor || "bg-amber-100 text-amber-800 border-amber-200"}`}>
+                          {item.badge}
+                        </span>
+                      )}
+                    </div>
+                    <span className="text-xs font-bold leading-tight">
+                      {labelFor(item.key, item.label)}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+          </motion.div>
+        </motion.div>
+      )}
+    </AnimatePresence>
     </>
   );
 };
