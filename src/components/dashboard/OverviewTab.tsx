@@ -256,23 +256,28 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({
         </div>
 
         {/* Device Categories */}
-        <div className="bg-white p-5 rounded-xl border border-slate-200 shadow-sm">
-          <h3 className="font-bold text-slate-900 text-sm mb-4">Hardware Inventory by Category</h3>
-          <div className="space-y-2.5">
-            {Object.entries(categories).map(([cat, count]) => (
-              <div key={cat} className="flex items-center justify-between text-xs py-1.5 px-2 rounded-lg hover:bg-slate-50">
-                <span className="font-medium text-slate-700">{cat}</span>
-                <div className="flex items-center gap-2">
-                  <div className="w-20 bg-slate-100 rounded-full h-1.5 overflow-hidden">
-                    <div
-                      className="bg-slate-700 h-1.5 rounded-full"
-                      style={{ width: `${(count / (assets.length || 1)) * 100}%` }}
-                    />
+        <div className="bg-white p-5 rounded-xl border border-slate-200 shadow-sm flex flex-col justify-between">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="font-bold text-slate-900 text-sm">Hardware Inventory by Category</h3>
+            <span className="text-xs font-normal text-slate-400">{Object.keys(categories).length} Categories</span>
+          </div>
+          <div className="space-y-2.5 max-h-64 overflow-y-auto pr-1">
+            {Object.entries(categories)
+              .sort((a, b) => b[1] - a[1])
+              .map(([cat, count]) => (
+                <div key={cat} className="flex items-center justify-between text-xs py-1.5 px-2 rounded-lg hover:bg-slate-50">
+                  <span className="font-medium text-slate-700 truncate">{cat}</span>
+                  <div className="flex items-center gap-2 flex-shrink-0">
+                    <div className="w-20 bg-slate-100 rounded-full h-1.5 overflow-hidden">
+                      <div
+                        className="bg-slate-700 h-1.5 rounded-full"
+                        style={{ width: `${(count / (assets.length || 1)) * 100}%` }}
+                      />
+                    </div>
+                    <span className="font-bold text-slate-900 w-6 text-right">{count}</span>
                   </div>
-                  <span className="font-bold text-slate-900 w-6 text-right">{count}</span>
                 </div>
-              </div>
-            ))}
+              ))}
           </div>
         </div>
 

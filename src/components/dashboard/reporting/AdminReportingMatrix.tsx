@@ -4,9 +4,13 @@ import React, { useEffect, useState } from "react";
 import {
   Calendar,
   CheckCircle2,
+  ChevronLeft,
+  ChevronRight,
   Clock,
   Eye,
+  Filter,
   Lock,
+  RotateCcw,
   Shield,
   Unlock,
   Users,
@@ -27,11 +31,18 @@ interface Props {
 }
 
 export function AdminReportingMatrix({ adminUid, staffList }: Props) {
-  const [weekDetails, setWeekDetails] = useState(getISOWeekDetails());
+  // Interactive Target Week Date Navigation
+  const [referenceDate, setReferenceDate] = useState<Date>(new Date());
+  const weekDetails = getISOWeekDetails(referenceDate);
+
   const [reports, setReports] = useState<WeeklyReport[]>([]);
   const [loading, setLoading] = useState(true);
   const [grantingUid, setGrantingUid] = useState<string | null>(null);
   const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
+
+  // Filters State
+  const [selectedDepartment, setSelectedDepartment] = useState<string>("ALL");
+  const [selectedBranch, setSelectedBranch] = useState<string>("ALL");
 
   // Inspector Modal State
   const [inspectStaff, setInspectStaff] = useState<StaffMember | null>(null);
@@ -50,7 +61,38 @@ export function AdminReportingMatrix({ adminUid, staffList }: Props) {
       }
     }
     loadWeekMatrix();
-  }, [weekDetails]);
+  }, [weekDetails.year, weekDetails.weekNumber]);
+
+  // Date / Week Navigation Handlers
+  const handlePrevWeek = () => {
+    setReferenceDate((prev) => {
+      const updated = new Date(prev);
+      updated.setDate(updated.getDate() - 7);
+      return updated;
+    });
+  };
+
+  const handleNextWeek = () => {
+    setReferenceDate((prev) => {
+      const updated = new Date(prev);
+      updated.setDate(updated.getDate() + 7);
+      const today = new Date();
+      return updated > today ? today : updated;
+    });
+  };
+
+  const handleDateChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.value) {
+      const [yearStr, monthStr, dayStr] = e.target.value.split("-");
+      const selected = new Date(Number(yearStr), Number(monthStr) - 1, Number(dayStr));
+      const today = new Date();
+      setReferenceDate(selected > today ? today : selected);
+    }
+  };
+
+  const handleResetToCurrentWeek = () => {
+    setReferenceDate(new Date());
+  };
 
   const handleGrantUnlock = async (staff: StaffMember) => {
     const targetUid = staff.uid || staff.id;
@@ -84,11 +126,29 @@ export function AdminReportingMatrix({ adminUid, staffList }: Props) {
     }
   };
 
+  // Derive Filtered Options
+  const departments = Array.from(
+    new Set(staffList.map((s) => s.department || "Operations").filter(Boolean))
+  );
+  const branches = Array.from(
+    new Set(staffList.map((s) => s.branch || "Abuja Branch").filter(Boolean))
+  );
+
+  const filteredStaff = staffList.filter((s) => {
+    const matchesDept = selectedDepartment === "ALL" || (s.department || "Operations") === selectedDepartment;
+    const matchesBranch = selectedBranch === "ALL" || (s.branch || "Abuja Branch") === selectedBranch;
+    return matchesDept && matchesBranch;
+  });
+
+  const isCurrentWeek =
+    weekDetails.year === getISOWeekDetails().year &&
+    weekDetails.weekNumber === getISOWeekDetails().weekNumber;
+
   return (
     <div className="space-y-6">
-      {/* Header & Controls */}
+      {/* Header & Interactive Week Navigator Controls */}
       <div className="rounded-2xl border border-[var(--border)] bg-[var(--bg-surface)] p-4 sm:p-6 shadow-sm space-y-4">
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
           <div>
             <div className="flex items-center gap-2">
               <Shield className="h-5 w-5 text-amber-500" />
@@ -101,14 +161,101 @@ export function AdminReportingMatrix({ adminUid, staffList }: Props) {
             </p>
           </div>
 
-          {/* Week Selector */}
-          <div className="flex items-center gap-2">
+          {/* Interactive Target Week Controller */}
+          <div className="flex items-center gap-2 flex-wrap">
             <span className="text-xs font-semibold text-[var(--text-muted)]">Target Week:</span>
-            <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-[var(--border)] bg-[var(--bg-muted)]/50 text-xs font-bold text-[var(--text-primary)]">
-              <Calendar className="h-3.5 w-3.5 text-blue-500" />
-              Week {weekDetails.weekNumber} ({weekDetails.weekStartDate})
-            </span>
+
+            <div className="inline-flex items-center gap-1.5 rounded-xl border border-[var(--border)] bg-[var(--bg-muted)]/50 p-1">
+              <button
+                type="button"
+                onClick={handlePrevWeek}
+                className="p-1 rounded-lg text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-surface)] transition-colors"
+                title="Previous Week"
+              >
+                <ChevronLeft className="h-4 w-4" />
+              </button>
+
+              <div className="inline-flex items-center gap-1.5 px-2 py-1 text-xs font-bold text-[var(--text-primary)]">
+                <Calendar className="h-3.5 w-3.5 text-blue-500" />
+                <span>Week {weekDetails.weekNumber}</span>
+                <span className="text-[11px] text-[var(--text-muted)] font-medium">({weekDetails.weekStartDate})</span>
+              </div>
+
+              <input
+                type="date"
+                value={weekDetails.weekStartDate}
+                onChange={handleDateChange}
+                max={new Date().toISOString().split("T")[0]}
+                aria-label="Target week start date"
+                className="w-7 h-7 p-1 rounded-lg border border-[var(--border)] bg-[var(--bg-surface)] text-xs cursor-pointer focus:outline-none"
+                title="Pick specific week from calendar"
+              />
+
+              <button
+                type="button"
+                onClick={handleNextWeek}
+                disabled={isCurrentWeek}
+                className="p-1 rounded-lg text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-surface)] disabled:opacity-30 transition-colors"
+                title="Next Week"
+              >
+                <ChevronRight className="h-4 w-4" />
+              </button>
+            </div>
+
+            {!isCurrentWeek && (
+              <button
+                type="button"
+                onClick={handleResetToCurrentWeek}
+                className="inline-flex items-center gap-1 px-3 py-1.5 rounded-xl border border-[var(--border)] bg-[var(--bg-surface)] text-xs font-semibold text-blue-600 dark:text-blue-400 hover:bg-[var(--bg-muted)] transition-colors"
+                title="Jump to Current Week"
+              >
+                <RotateCcw className="h-3.5 w-3.5" />
+                Current Week
+              </button>
+            )}
           </div>
+        </div>
+
+        {/* Department & Branch Filters Bar */}
+        <div className="flex items-center justify-between border-t border-[var(--border)] pt-3 gap-3 flex-wrap">
+          <div className="flex items-center gap-3 flex-wrap">
+            <div className="flex items-center gap-1.5 text-xs font-semibold text-[var(--text-muted)]">
+              <Filter className="h-3.5 w-3.5 text-blue-500" />
+              <span>Filters:</span>
+            </div>
+
+            {/* Department Filter */}
+            <select
+              value={selectedDepartment}
+              onChange={(e) => setSelectedDepartment(e.target.value)}
+              className="rounded-lg border border-[var(--border)] bg-[var(--bg-surface)] px-2.5 py-1 text-xs font-semibold text-[var(--text-primary)] focus:outline-none"
+            >
+              <option value="ALL">All Departments ({departments.length})</option>
+              {departments.map((dept) => (
+                <option key={dept} value={dept}>
+                  {dept}
+                </option>
+              ))}
+            </select>
+
+            {/* Branch Filter */}
+            <select
+              value={selectedBranch}
+              onChange={(e) => setSelectedBranch(e.target.value)}
+              className="rounded-lg border border-[var(--border)] bg-[var(--bg-surface)] px-2.5 py-1 text-xs font-semibold text-[var(--text-primary)] focus:outline-none"
+            >
+              <option value="ALL">All Branches ({branches.length})</option>
+              {branches.map((br) => (
+                <option key={br} value={br}>
+                  {br}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <span className="text-xs text-[var(--text-muted)] font-medium">
+            Showing {filteredStaff.length} of {staffList.length} Staff
+          </span>
         </div>
 
         {message && (
@@ -131,15 +278,15 @@ export function AdminReportingMatrix({ adminUid, staffList }: Props) {
           <div className="flex items-center gap-2">
             <Users className="h-4 w-4 text-blue-500" />
             <h3 className="font-bold text-sm text-[var(--text-primary)]">
-              Staff Submissions ({staffList.length} Staff Members)
+              Staff Submissions ({filteredStaff.length} Staff Members)
             </h3>
           </div>
         </div>
 
         {loading ? (
           <p className="p-8 text-center text-xs text-[var(--text-muted)]">Loading staff matrix data...</p>
-        ) : staffList.length === 0 ? (
-          <p className="p-8 text-center text-xs text-[var(--text-muted)]">No staff members registered in directory.</p>
+        ) : filteredStaff.length === 0 ? (
+          <p className="p-8 text-center text-xs text-[var(--text-muted)]">No staff members match the selected filters.</p>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-left text-xs border-collapse">
@@ -153,7 +300,7 @@ export function AdminReportingMatrix({ adminUid, staffList }: Props) {
                 </tr>
               </thead>
               <tbody className="divide-y divide-[var(--border)]">
-                {staffList.map((staff) => {
+                {filteredStaff.map((staff) => {
                   const targetUid = staff.uid || staff.id;
                   const matchingReport = reports.find(
                     (r) => r.userId === targetUid || r.userId === staff.email
@@ -249,7 +396,7 @@ export function AdminReportingMatrix({ adminUid, staffList }: Props) {
                     Report History Inspector: {inspectStaff.name}
                   </h3>
                   <p className="text-xs text-[var(--text-muted)]">
-                    Viewing and comparing weekly reports for {inspectStaff.email}
+                    Viewing and comparing weekly reports for {inspectStaff.email} ({inspectStaff.department || "Operations"})
                   </p>
                 </div>
               </div>
