@@ -1,6 +1,13 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
+import { createPortal } from "react-dom";
+import { AnimatePresence, motion } from "framer-motion";
+import {
+  MODAL_BACKDROP_VARIANTS,
+  MODAL_CONTENT_VARIANTS,
+  SPRING_TRANSITION,
+} from "@/lib/motion";
 import {
   Calendar,
   CheckCircle2,
@@ -33,6 +40,12 @@ interface Props {
 }
 
 export function AdminReportingMatrix({ adminUid, staffList }: Props) {
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
   // Interactive Target Week Date Navigation
   const [referenceDate, setReferenceDate] = useState<Date>(new Date());
   const weekDetails = getISOWeekDetails(referenceDate);
@@ -48,6 +61,17 @@ export function AdminReportingMatrix({ adminUid, staffList }: Props) {
 
   // Inspector Modal State
   const [inspectStaff, setInspectStaff] = useState<StaffMember | null>(null);
+
+  useEffect(() => {
+    if (inspectStaff) {
+      document.body.style.overflow = "hidden";
+    } else {
+      document.body.style.overflow = "";
+    }
+    return () => {
+      document.body.style.overflow = "";
+    };
+  }, [inspectStaff]);
 
   useEffect(() => {
     async function loadWeekMatrix() {
@@ -514,48 +538,69 @@ export function AdminReportingMatrix({ adminUid, staffList }: Props) {
         )}
       </div>
 
-      {/* Staff Report Inspector Modal */}
-      {inspectStaff && (
-        <div
-          className="fixed inset-0 z-[100] grid place-items-center bg-slate-950/75 p-2 backdrop-blur-sm sm:p-4"
-          role="dialog"
-          aria-modal="true"
-        >
-          <div className="flex max-h-[calc(100dvh-2rem)] w-full max-w-4xl flex-col overflow-hidden rounded-2xl border border-[var(--border)] bg-[var(--bg-surface)] text-[var(--text-primary)] shadow-2xl">
-            <header className="flex shrink-0 items-center justify-between border-b border-[var(--border)] bg-[var(--bg-muted)]/60 px-4 py-3 sm:px-6">
-              <div className="flex items-center gap-2">
-                <Eye className="h-5 w-5 text-blue-500" />
-                <div>
-                  <h3 className="font-bold text-sm sm:text-base">
-                    Report History Inspector: {inspectStaff.name}
-                  </h3>
-                  <p className="text-xs text-[var(--text-muted)]">
-                    Viewing and comparing weekly reports for {inspectStaff.email} ({inspectStaff.department || "Operations"})
-                  </p>
+      {/* Staff Report Inspector Modal - Full Screen Portal */}
+      {mounted && createPortal(
+        <AnimatePresence>
+          {inspectStaff && (
+            <motion.div
+              key="inspector-backdrop"
+              initial="hidden"
+              animate="visible"
+              exit="exit"
+              variants={MODAL_BACKDROP_VARIANTS}
+              className="fixed inset-0 z-[99999] grid place-items-center bg-slate-950/80 backdrop-blur-md p-2 sm:p-4 md:p-6"
+              role="dialog"
+              aria-modal="true"
+              onClick={() => setInspectStaff(null)}
+            >
+              <motion.div
+                key="inspector-content"
+                variants={MODAL_CONTENT_VARIANTS}
+                transition={SPRING_TRANSITION}
+                className="flex max-h-[92vh] w-full max-w-7xl flex-col overflow-hidden rounded-2xl border border-[var(--border)] bg-[var(--bg-surface)] text-[var(--text-primary)] shadow-2xl"
+                onClick={(e) => e.stopPropagation()}
+              >
+                <header className="flex shrink-0 items-center justify-between border-b border-[var(--border)] bg-[var(--bg-muted)]/60 px-4 py-3 sm:px-6">
+                  <div className="flex items-center gap-2.5">
+                    <div className="p-2 rounded-xl bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20 shrink-0">
+                      <Eye className="h-5 w-5" />
+                    </div>
+                    <div>
+                      <h3 className="font-bold text-base sm:text-lg text-[var(--text-primary)]">
+                        Report History Inspector: {inspectStaff.name}
+                      </h3>
+                      <p className="text-xs text-[var(--text-muted)]">
+                        Viewing and comparing weekly reports for {inspectStaff.email} ({inspectStaff.department || "Operations"} · {inspectStaff.branch || "Headquarters"})
+                      </p>
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setInspectStaff(null)}
+                    className="rounded-lg p-2 text-[var(--text-muted)] hover:bg-[var(--bg-muted)] hover:text-[var(--text-primary)]"
+                  >
+                    <X className="h-4 w-4" />
+                  </button>
+                </header>
+
+                <div className="min-h-0 flex-1 overflow-y-auto p-4 sm:p-6 space-y-6">
+                  <WeeklyComparisonView userId={inspectStaff.uid || inspectStaff.id} />
                 </div>
-              </div>
-              <button
-                onClick={() => setInspectStaff(null)}
-                className="rounded-lg p-2 text-[var(--text-muted)] hover:bg-[var(--bg-muted)] hover:text-[var(--text-primary)]"
-              >
-                <X className="h-4 w-4" />
-              </button>
-            </header>
 
-            <div className="min-h-0 flex-1 overflow-y-auto p-4 sm:p-6">
-              <WeeklyComparisonView userId={inspectStaff.uid || inspectStaff.id} />
-            </div>
-
-            <footer className="border-t border-[var(--border)] bg-[var(--bg-muted)]/40 px-4 py-3 flex justify-end">
-              <button
-                onClick={() => setInspectStaff(null)}
-                className="rounded-lg bg-blue-600 px-4 py-2 text-xs font-semibold text-white"
-              >
-                Close Inspector
-              </button>
-            </footer>
-          </div>
-        </div>
+                <footer className="border-t border-[var(--border)] bg-[var(--bg-muted)]/40 px-4 py-3 flex justify-end shrink-0">
+                  <button
+                    type="button"
+                    onClick={() => setInspectStaff(null)}
+                    className="rounded-xl bg-blue-600 px-5 py-2 text-xs font-semibold text-white hover:bg-blue-700 shadow-sm transition-all"
+                  >
+                    Close Inspector
+                  </button>
+                </footer>
+              </motion.div>
+            </motion.div>
+          )}
+        </AnimatePresence>,
+        document.body
       )}
 
       {/* Confirm Late Unlock Modal */}
