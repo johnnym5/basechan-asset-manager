@@ -12,6 +12,7 @@ export interface ReportSectionDef {
   title: string;
   isRequired?: boolean;
   columns: ReportColumnDef[];
+  defaultRows?: Array<Record<string, any>>;
 }
 
 export interface ReportTemplate {

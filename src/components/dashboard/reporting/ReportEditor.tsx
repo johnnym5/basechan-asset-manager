@@ -64,7 +64,11 @@ export function ReportEditor({ userId, userName, userEmail, isAdmin }: Props) {
           // Initialize fresh report draft structure
           const initialData: Record<string, any[]> = {};
           mergedTemp.forEach((sec: ReportSectionDef) => {
-            initialData[sec.id] = [createEmptyRow(sec.columns)];
+            if (sec.defaultRows && sec.defaultRows.length > 0) {
+              initialData[sec.id] = sec.defaultRows.map((row) => ({ ...row }));
+            } else {
+              initialData[sec.id] = [createEmptyRow(sec.columns)];
+            }
           });
           setReportData(initialData);
           setReport(null);

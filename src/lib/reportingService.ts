@@ -20,18 +20,54 @@ export async function fetchGlobalAdminTemplate(): Promise<ReportSectionDef[]> {
     console.warn("Could not fetch global admin template, returning fallback defaults:", err);
   }
 
-  // Fallback default mandatory global sections if not yet initialized in Firestore
+  // Fallback default mandatory global sections for Basechan Study Abroad Agency
+  const DEFAULT_AGGREGATOR_LIST = [
+    "SI - UK",
+    "EDVOY",
+    "UAP",
+    "York St'John",
+    "AIMS EDUCATION",
+    "STUDY NOW",
+    "SUNDERLAND",
+    "ASTON LONDON",
+    "HULL LONDON",
+    "CRIZAC",
+  ];
+
+  const standardColumns: ReportSectionDef["columns"] = [
+    { key: "aggregator", label: "Aggregator / Partner", type: "text" },
+    { key: "applications", label: "No of Application", type: "number", isCalculatedTotal: true },
+    { key: "awaiting_offer", label: "Awaiting Offer", type: "number", isCalculatedTotal: true },
+    { key: "conditional_offer", label: "Conditional Offer", type: "number", isCalculatedTotal: true },
+    { key: "unconditional_offer", label: "Unconditional Offer", type: "number", isCalculatedTotal: true },
+  ];
+
   return [
     {
-      id: "sec_weekly_goals",
-      title: "Weekly Key Deliverables & Targets",
+      id: "sec_b2c_aggregators",
+      title: "Aggregator Performance (DIRECT - B2C)",
       isRequired: true,
-      columns: [
-        { key: "deliverable", label: "Deliverable / Task Name", type: "text" },
-        { key: "target_qty", label: "Target Qty", type: "number", isCalculatedTotal: true },
-        { key: "achieved_qty", label: "Achieved Qty", type: "number", isCalculatedTotal: true },
-        { key: "notes", label: "Status & Notes", type: "text" },
-      ],
+      columns: standardColumns,
+      defaultRows: DEFAULT_AGGREGATOR_LIST.map((name) => ({
+        aggregator: name,
+        applications: "",
+        awaiting_offer: "",
+        conditional_offer: "",
+        unconditional_offer: "",
+      })),
+    },
+    {
+      id: "sec_b2b_aggregators",
+      title: "Aggregator Performance (B2B)",
+      isRequired: true,
+      columns: standardColumns,
+      defaultRows: DEFAULT_AGGREGATOR_LIST.map((name) => ({
+        aggregator: name,
+        applications: "",
+        awaiting_offer: "",
+        conditional_offer: "",
+        unconditional_offer: "",
+      })),
     },
   ];
 }
