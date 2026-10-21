@@ -2,8 +2,18 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
     function signedIn() { return request.auth != null; }
-    function isAdmin() { return signedIn() && request.auth.token.email.matches('.*@basechaninternational[.]com$'); }
-    function isStaff() { return signedIn() && request.auth.token.email.matches('^[^@]+[.]basechaninternational@gmail[.]com$'); }
+    function isAdmin() {
+      return signedIn() && (
+        request.auth.token.get('role', '') == 'SUPER_ADMIN' ||
+        request.auth.token.email.matches('.*@basechaninternational[.]com$')
+      );
+    }
+    function isStaff() {
+      return signedIn() && (
+        request.auth.token.get('role', '') == 'STAFF' ||
+        request.auth.token.email.matches('^[^@]+[.]basechaninternational@gmail[.]com$')
+      );
+    }
     function grantExists() { return signedIn() && exists(/databases/$(database)/documents/access_grants/$(request.auth.uid)); }
     function grantData() { return get(/databases/$(database)/documents/access_grants/$(request.auth.uid)).data; }
     function grantAction(page, action) {
@@ -108,7 +118,7 @@ service cloud.firestore {
     match /stocktake_items/{itemId} {
       allow read: if isAdmin() || (isStaff() && resource.data.get('assignedUid', '') == request.auth.uid);
       allow create: if isAdmin() && request.resource.data.status == 'unverified' && request.resource.data.keys().hasOnly(['roundId', 'assetId', 'assetTag', 'branch', 'assignedUid', 'status', 'history']);
-      allow update: if isAdmin() || (isStaff() && resource.data.get('assignedUid', '') == request.auth.uid && resource.data.status == 'unverified' && request.resource.data.status in ['verified', 'missing', 'moved', 'damaged'] && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status', 'note', 'checkedBy', 'checkedAt', 'history']) && request.resource.data.checkedBy == request.auth.uid && request.resource.data.history.size() == resource.data.get('history', []).size() + 1 && request.resource.data.history[request.resource.data.history.size() - 1].checkedBy == request.auth.uid);
+      allow update: if isAdmin() || (isStaff() && resource.data.get('assignedUid', '') == request.auth.uid && resource.data.status == 'unverified' && resource.data.status in ['verified', 'missing', 'moved', 'damaged'] && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status', 'note', 'checkedBy', 'checkedAt', 'history']) && request.resource.data.checkedBy == request.auth.uid && request.resource.data.history.size() == resource.data.get('history', []).size() + 1 && request.resource.data.history[request.resource.data.history.size() - 1].checkedBy == request.auth.uid);
       allow delete: if false;
     }
 
@@ -128,7 +138,7 @@ service cloud.firestore {
       // Legacy rawPass documents are deliberately hidden from non-admin clients until migrated.
       allow read: if isAdmin() || (!('rawPass' in resource.data) && canRead('digital_credentials', resource.data));
       allow create: if createAllowed('digital_credentials');
-      allow update: if isAdmin() || credentialStaffEdit() || scopedStaffEdit('digital_credentials', ['platform', 'loginEmail', 'subAgentHandleId', 'userRole', 'vaultStatus', 'updatedAt']) || archiveAllowed('digital_credentials');
+      allow update: if isAdmin() || credentialStaffEdit() || scopedStaffEdit('digital_credentials', ['platform', 'loginEmail', 'subAgentHandleId', 'userRole', 'rawPass', 'vaultStatus', 'updatedAt']) || archiveAllowed('digital_credentials');
       allow delete: if false;
     }
     match /credential_secrets/{credentialId} {
@@ -167,24 +177,57 @@ service cloud.firestore {
       allow update, delete: if false;
     }
     match /audit_logs/{logId} {
-      allow read: if signedIn();
-      allow create: if signedIn();
+      allow read: if isAdmin() || (isStaff() && (
+        resource.data.get('actorUid', '') == request.auth.uid ||
+        resource.data.get('visibilityUids', []).hasAny([request.auth.uid])
+      ));
+      allow create: if signedIn() &&
+        request.resource.data.actorUid == request.auth.uid &&
+        request.resource.data.actorEmail == request.auth.token.email;
       allow update, delete: if false;
     }
 
     match /reportTemplates/{templateId} {
       allow read: if signedIn();
-      allow create, update, delete: if signedIn();
+      allow create, update: if isAdmin() || (isStaff() && templateId == request.auth.uid && request.resource.data.get('userId', '') == request.auth.uid);
+      allow delete: if isAdmin() || (isStaff() && templateId == request.auth.uid);
     }
     match /weeklyReports/{reportId} {
-      allow read: if signedIn();
-      allow create, update: if signedIn();
+      allow read: if isAdmin() || (isStaff() && (
+        resource.data.get('userId', '') == request.auth.uid ||
+        resource.data.get('ownerEmail', '') == request.auth.token.email
+      ));
+      allow create: if signedIn() && (
+        isAdmin() ||
+        (isStaff() && (
+          request.resource.data.get('userId', '') == request.auth.uid ||
+          request.resource.data.get('ownerEmail', '') == request.auth.token.email
+        ))
+      );
+      allow update: if isAdmin() || (
+        isStaff() &&
+        (resource.data.get('userId', '') == request.auth.uid || resource.data.get('ownerEmail', '') == request.auth.token.email) &&
+        (resource.data.get('status', 'DRAFT') in ['DRAFT', 'LATE_UNLOCKED'])
+      );
       allow delete: if isAdmin();
     }
     match /monthlyPackages/{packageId} {
-      allow read: if signedIn();
-      allow create, update: if signedIn();
+      allow read: if isAdmin() || (isStaff() && (
+        resource.data.get('userId', '') == request.auth.uid ||
+        resource.data.get('ownerEmail', '') == request.auth.token.email
+      ));
+      allow create, update: if isAdmin() || (isStaff() && (
+        request.resource.data.get('userId', '') == request.auth.uid ||
+        request.resource.data.get('ownerEmail', '') == request.auth.token.email
+      ));
       allow delete: if isAdmin();
+    }
+    match /lateUnlockRequests/{requestId} {
+      allow read: if isAdmin() || (isStaff() && (
+        resource.data.get('userId', '') == request.auth.uid ||
+        requestId.startsWith(request.auth.uid + '_')
+      ));
+      allow create, update, delete: if isAdmin();
     }
   }
 }

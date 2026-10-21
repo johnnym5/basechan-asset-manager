@@ -22,6 +22,26 @@ describe("reportingUtils", () => {
       expect(details.weekStartDate).toBe("2025-03-03"); // Monday
       expect(details.weekEndDate).toBe("2025-03-09"); // Sunday
     });
+
+    it("correctly handles year boundary dates according to ISO week-year convention", () => {
+      // December 30, 2024 is Monday of ISO Week 1, ISO Year 2025!
+      const dec30_2024 = new Date(2024, 11, 30);
+      const details30 = getISOWeekDetails(dec30_2024);
+      expect(details30.year).toBe(2025);
+      expect(details30.weekNumber).toBe(1);
+
+      // January 1, 2025 is Wednesday of ISO Week 1, ISO Year 2025
+      const jan1_2025 = new Date(2025, 0, 1);
+      const detailsJan1 = getISOWeekDetails(jan1_2025);
+      expect(detailsJan1.year).toBe(2025);
+      expect(detailsJan1.weekNumber).toBe(1);
+
+      // December 31, 2025 is Wednesday of ISO Week 1, ISO Year 2026 (nearest Thursday is Jan 1, 2026)
+      const dec31_2025 = new Date(2025, 11, 31);
+      const detailsDec31 = getISOWeekDetails(dec31_2025);
+      expect(detailsDec31.year).toBe(2026);
+      expect(detailsDec31.weekNumber).toBe(1);
+    });
   });
 
   describe("mergeTemplates", () => {
@@ -85,7 +105,7 @@ describe("reportingUtils", () => {
     });
 
     it("handles zero baseline safely without Infinity or NaN", () => {
-      expect(calculatePercentageDelta(50, 0)).toBe(100);
+      expect(calculatePercentageDelta(50, 0)).toBe("NEW");
       expect(calculatePercentageDelta(0, 0)).toBe(0);
     });
   });

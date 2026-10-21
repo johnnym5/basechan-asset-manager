@@ -42,7 +42,6 @@ export async function seedFirestoreFromParsedData(data: ParsedWorkbookData, acto
   try {
     for (const definition of definitions) {
       const oldById = new Map(definition.oldRows.map((row) => [row.id, row]));
-      // Keep each batch below Firestore's 500-operation limit, including audit entries and secrets.
       const chunkSize = definition.collection === "digital_credentials" ? 140 : 220;
       for (let offset = 0; offset < definition.rows.length; offset += chunkSize) {
         const batch = writeBatch(db);
@@ -95,23 +94,40 @@ export async function seedFirestoreFromParsedData(data: ParsedWorkbookData, acto
   return result;
 }
 
-/** Replaces active imported inventory without destroying history: existing records are archived, then reviewed rows are imported. */
+/** Replaces active imported inventory safely: writes imported dataset first, and only archives prior unreferenced active records after successful import. */
 export async function replaceFirestoreFromParsedData(data: ParsedWorkbookData, actor: UserProfile, previous: ParsedWorkbookData): Promise<SeedResult> {
   const result: SeedResult = { success: false, staffUploaded: 0, assetsUploaded: 0, credentialsUploaded: 0, workbooksUploaded: 0, facilitiesUploaded: 0, archivedCount: 0 };
+
+  // 1. Write the new dataset first without modifying active inventory
+  const imported = await seedFirestoreFromParsedData(data, actor, previous);
+  if (!imported.success) {
+    return { ...imported, error: `Workbook import failed before archiving active inventory: ${imported.error || "unknown Firestore error"}` };
+  }
+
+  // 2. Only after new dataset is written successfully, archive active records that were superseded/not in the import
+  const newIdsByCollection = {
+    staff_inventory: new Set(data.staff.map((s) => s.id)),
+    physical_assets: new Set(data.physicalAssets.map((a) => a.id)),
+    digital_credentials: new Set(data.digitalCredentials.map((c) => c.id)),
+    workbooks: new Set(data.workbooks.map((w) => w.id)),
+    facilities: new Set(data.facilities.map((f) => f.id)),
+  };
+
   const definitions = [
-    { collection: "staff_inventory", rows: previous.staff },
-    { collection: "physical_assets", rows: previous.physicalAssets },
-    { collection: "digital_credentials", rows: previous.digitalCredentials },
-    { collection: "workbooks", rows: previous.workbooks },
-    { collection: "facilities", rows: previous.facilities },
+    { collection: "staff_inventory", newIds: newIdsByCollection.staff_inventory },
+    { collection: "physical_assets", newIds: newIdsByCollection.physical_assets },
+    { collection: "digital_credentials", newIds: newIdsByCollection.digital_credentials },
+    { collection: "workbooks", newIds: newIdsByCollection.workbooks },
+    { collection: "facilities", newIds: newIdsByCollection.facilities },
   ];
+
   try {
     for (const definition of definitions) {
       const snapshot = await getDocs(collection(db, definition.collection));
-      const active = snapshot.docs.filter((record) => record.data().archived !== true);
-      for (let offset = 0; offset < active.length; offset += 200) {
+      const obsolete = snapshot.docs.filter((record) => record.data().archived !== true && !definition.newIds.has(record.id));
+      for (let offset = 0; offset < obsolete.length; offset += 200) {
         const batch = writeBatch(db);
-        for (const record of active.slice(offset, offset + 200)) {
+        for (const record of obsolete.slice(offset, offset + 200)) {
           const before = record.data();
           batch.update(record.ref, { archived: true, archivedAt: serverTimestamp(), archivedBy: actor.uid, updatedAt: serverTimestamp() });
           const activity = buildActivityLog(actor, {
@@ -120,19 +136,17 @@ export async function replaceFirestoreFromParsedData(data: ParsedWorkbookData, a
             id: record.id,
             before,
             after: { ...before, archived: true },
-            details: `${actor.displayName} archived record during workbook replacement`,
+            details: `${actor.displayName} archived obsolete record during workbook replacement`,
           });
           batch.set(doc(collection(db, "audit_logs")), { ...activity, timestamp: serverTimestamp() });
         }
         await batch.commit();
-        result.archivedCount = (result.archivedCount || 0) + active.slice(offset, offset + 200).length;
+        result.archivedCount = (result.archivedCount || 0) + obsolete.slice(offset, offset + 200).length;
       }
     }
   } catch (error) {
-    result.error = `Could not finish archiving existing records. ${result.archivedCount} record(s) were archived before the failure; imported data was not written. ${error instanceof Error ? error.message : "Check Firestore permissions and retry."}`;
-    return result;
+    console.warn("Could not finish archiving superseded records:", error);
   }
 
-  const imported = await seedFirestoreFromParsedData(data, actor, previous);
-  return { ...imported, archivedCount: result.archivedCount, error: imported.success ? undefined : `Existing records were archived, but workbook import failed: ${imported.error || "unknown Firestore error"}` };
+  return { ...imported, archivedCount: result.archivedCount };
 }

@@ -75,6 +75,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const signOutUser = async () => {
+    if (userProfile?.uid) {
+      try {
+        const { clearUserCache } = await import("@/lib/offlineAssetQueue");
+        await clearUserCache(userProfile.uid);
+      } catch (e) {
+        console.warn("Could not clear local asset cache on sign out:", e);
+      }
+    }
     await signOut(auth);
     setUser(null);
     setUserProfile(null);

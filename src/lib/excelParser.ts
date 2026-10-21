@@ -109,14 +109,21 @@ export async function parseBasechanWorkbook(buffer: ArrayBuffer): Promise<Parsed
   if (staffSheet) {
     const rows = XLSX.utils.sheet_to_json<any>(workbook.Sheets[staffSheet]);
     addSheetMappingDiagnostics(staffSheet, rows, ["S/N", "Full Name", "Email Address", "Department", "Position / Role", "Branch Location", "Phone Number"]);
+    const seenEmails = new Set<string>();
     rows.forEach((r, idx) => {
       const name = findVal(r, ["Full Name", "Name", "Staff Name"]);
       if (name) {
+        const email = asText(findVal(r, ["Email Address", "Email", "Corporate Email"])).toLowerCase();
+        if (email && seenEmails.has(email)) {
+          result.parseIssues?.push({ sheet: staffSheet, row: idx + 2, message: `Duplicate email detected for staff member: ${email}.` });
+        } else if (email) {
+          seenEmails.add(email);
+        }
         result.staff.push({
           id: serialId("STF", r, idx),
           sn: findVal(r, ["S/N", "SN", "No"]) || idx + 1,
           name: String(name).trim(),
-          email: asText(findVal(r, ["Email Address", "Email", "Corporate Email"])).toLowerCase(),
+          email,
           department: String(findVal(r, ["Department", "Dept"]) || "Operations").trim(),
           position: String(findVal(r, ["Position / Role", "Position", "Role", "Title"]) || "Staff").trim(),
           branch: normalizeBranch(findVal(r, ["Branch Location", "Branch", "Location"])),
@@ -137,6 +144,8 @@ export async function parseBasechanWorkbook(buffer: ArrayBuffer): Promise<Parsed
   if (hwSheet) {
     const rows = XLSX.utils.sheet_to_json<any>(workbook.Sheets[hwSheet]);
     addSheetMappingDiagnostics(hwSheet, rows, ["S/N", "Tag ID", "Serial Number", "Make & Model", "Category", "Assigned Custodian", "Condition", "Operational Status", "Purchase Date", "Branch Location"]);
+    const seenTags = new Set<string>();
+    const seenSerials = new Set<string>();
     rows.forEach((r, idx) => {
       const model = findVal(r, ["Make & Model", "Model", "Device Name", "Description"]);
       if (model) {
@@ -145,10 +154,25 @@ export async function parseBasechanWorkbook(buffer: ArrayBuffer): Promise<Parsed
         const rawSerial = asText(findVal(r, ["Serial Number", "Serial", "Service Tag", "SN"]));
         const rawTag = asText(findVal(r, ["Tag ID", "Asset Tag", "Tag"]));
 
+        const isProvisionalTag = !rawTag || /^TAG-\d+$/i.test(rawTag) || /^PROVISIONAL-/i.test(rawTag);
+        const tag = isProvisionalTag ? `PROVISIONAL-${String(idx + 1).padStart(3, "0")}` : rawTag;
+
+        if (!isProvisionalTag && seenTags.has(tag.toLowerCase())) {
+          result.parseIssues?.push({ sheet: hwSheet, row: idx + 2, message: `Duplicate official asset tag detected: ${tag}.` });
+        } else if (!isProvisionalTag) {
+          seenTags.add(tag.toLowerCase());
+        }
+
+        if (rawSerial && rawSerial.toLowerCase() !== "nil" && rawSerial.toLowerCase() !== "n/a" && seenSerials.has(rawSerial.toLowerCase())) {
+          result.parseIssues?.push({ sheet: hwSheet, row: idx + 2, message: `Duplicate serial number detected: ${rawSerial}.` });
+        } else if (rawSerial && rawSerial.toLowerCase() !== "nil" && rawSerial.toLowerCase() !== "n/a") {
+          seenSerials.add(rawSerial.toLowerCase());
+        }
+
         const assetRecord: PhysicalAsset = {
           id: serialId("AST", r, idx),
           sn: findVal(r, ["S/N", "SN", "No"]) || idx + 1,
-          tag: rawTag || `TAG-${String(idx + 1).padStart(3, "0")}`,
+          tag,
           serialNumber: rawSerial,
           makeModel: String(model).trim(),
           category: String(findVal(r, ["Category", "Device Category"]) || "Laptop").trim(),
@@ -246,11 +270,13 @@ export async function parseBasechanWorkbook(buffer: ArrayBuffer): Promise<Parsed
       if (item) {
         const allocation = String(findVal(r, ["Assigned / Shared"]) || "").trim();
         const assignedPerson = staffByName.get(allocation.toLowerCase());
+        const infraId = asText(findVal(r, ["Infrastructure ID", "Infra ID", "Facility ID"]));
+        const branchVal = findVal(r, ["Branch Location", "Branch", "Location", "Site"]);
         result.facilities.push({
           id: serialId("FAC", r, idx),
           sn: findVal(r, ["S/N", "SN", "No"]) || idx + 1,
-          infrastructureId: asText(findVal(r, ["Infrastructure ID"])),
-          branch: normalizeBranch(findVal(r, ["Infrastructure ID", "Branch", "Location"])),
+          infrastructureId: infraId,
+          branch: normalizeBranch(branchVal || "Abuja Branch"),
           itemDescription: String(item).trim(),
           category: String(findVal(r, ["Category (Furniture/Network/Peripheral)", "Category"]) || "FURNITURE").trim(),
           roomZone: String(findVal(r, ["Room / Zone"]) || "").trim(),

@@ -632,17 +632,35 @@ export default function Home() {
     const staffByEmail = new Map(staff.map((person) => [person.email.toLowerCase(), person]));
     const assignedUids = Array.from(new Set(branchAssets.map((asset) => asset.assignedStaffUid || staffByEmail.get((asset.assignedStaffEmail || "").toLowerCase())?.uid).filter((uid): uid is string => !!uid)));
     const roundRef = doc(collection(db, "stocktake_rounds"));
-    const roundBatch = writeBatch(db);
-    roundBatch.set(roundRef, { title, branch, status: "open", assignedUids, createdBy: userProfile.uid, createdAt: serverTimestamp() });
-    roundBatch.set(doc(collection(db, "audit_logs")), { ...buildActivityLog(userProfile, { resource: "stocktake_rounds", action: "CREATE", id: roundRef.id, record: { title } }), timestamp: serverTimestamp() });
-    await roundBatch.commit();
-    await Promise.all(branchAssets.map(async (asset) => {
+
+    // Prepare item and task writes in chunked batches first
+    const operations: Array<(batch: any) => void> = [];
+    for (const asset of branchAssets) {
       const assignee = staffByEmail.get((asset.assignedStaffEmail || "").toLowerCase());
-      const item: Omit<StocktakeItem, "id"> = { roundId: roundRef.id, assetId: asset.id, assetTag: asset.tag, branch, assignedUid: asset.assignedStaffUid || assignee?.uid, status: "unverified", history: [] };
-      const ref = doc(db, "stocktake_items", `${roundRef.id}_${asset.id}`);
-      await setDoc(ref, item);
-      if (item.assignedUid) await addDoc(collection(db, "tasks"), { type: "stocktake", title: `Verify asset ${asset.tag}`, description: title, status: "open", createdByUid: userProfile.uid, assignedToUid: item.assignedUid, assetId: asset.id, assetTag: asset.tag, createdAt: serverTimestamp(), updatedAt: serverTimestamp() });
-    }));
+      const assignedUid = asset.assignedStaffUid || assignee?.uid;
+      const itemRef = doc(db, "stocktake_items", `${roundRef.id}_${asset.id}`);
+      operations.push((b) => b.set(itemRef, { roundId: roundRef.id, assetId: asset.id, assetTag: asset.tag, branch, assignedUid: assignedUid || "", status: "unverified", history: [] }));
+      if (assignedUid) {
+        const taskRef = doc(collection(db, "tasks"));
+        operations.push((b) => b.set(taskRef, { type: "stocktake", title: `Verify asset ${asset.tag}`, description: title, status: "open", createdByUid: userProfile.uid, assignedToUid: assignedUid, assetId: asset.id, assetTag: asset.tag, createdAt: serverTimestamp(), updatedAt: serverTimestamp() }));
+      }
+    }
+
+    // Write item and task chunks
+    for (let i = 0; i < operations.length; i += 200) {
+      const chunkBatch = writeBatch(db);
+      for (const op of operations.slice(i, i + 200)) {
+        op(chunkBatch);
+      }
+      await chunkBatch.commit();
+    }
+
+    // Finally commit the open round and audit log entry after all items and tasks are created
+    const finalBatch = writeBatch(db);
+    finalBatch.set(roundRef, { title, branch, status: "open", assignedUids, createdBy: userProfile.uid, createdAt: serverTimestamp() });
+    finalBatch.set(doc(collection(db, "audit_logs")), { ...buildActivityLog(userProfile, { resource: "stocktake_rounds", action: "CREATE", id: roundRef.id, record: { title } }), timestamp: serverTimestamp() });
+    await finalBatch.commit();
+
     const [rounds, checks] = await Promise.all([getDocs(collection(db, "stocktake_rounds")), getDocs(collection(db, "stocktake_items"))]);
     setStocktakeRounds(rounds.docs.map((d) => ({ id: d.id, ...d.data() } as StocktakeRound)));
     setStocktakeItems(checks.docs.map((d) => ({ id: d.id, ...d.data() } as StocktakeItem)));

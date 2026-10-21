@@ -17,6 +17,31 @@ interface Props {
   userId: string;
 }
 
+function renderDeltaBadge(delta: number | "NEW" | undefined) {
+  if (delta === "NEW") {
+    return (
+      <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400">
+        NEW
+      </span>
+    );
+  }
+  const val = typeof delta === "number" ? delta : 0;
+  return (
+    <span
+      className={`inline-flex items-center gap-0.5 px-2 py-0.5 rounded-full text-[10px] font-bold ${
+        val > 0
+          ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400"
+          : val < 0
+          ? "bg-rose-500/10 text-rose-600 dark:text-rose-400"
+          : "bg-[var(--bg-muted)] text-[var(--text-muted)]"
+      }`}
+    >
+      {val > 0 ? <TrendingUp className="h-3 w-3 shrink-0" /> : val < 0 ? <TrendingDown className="h-3 w-3 shrink-0" /> : null}
+      {val > 0 ? `+${val}%` : `${val}%`}
+    </span>
+  );
+}
+
 export function WeeklyComparisonView({ userId }: Props) {
   const [history, setHistory] = useState<WeeklyReport[]>([]);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
@@ -28,7 +53,6 @@ export function WeeklyComparisonView({ userId }: Props) {
       try {
         const rpts = await fetchUserWeeklyReportsHistory(userId);
         setHistory(rpts);
-        // Default: select up to the latest 4 submitted reports
         const submitted = rpts.filter((r) => r.status === "SUBMITTED");
         const defaultSelected = submitted.slice(0, 4).map((r) => r.id);
         setSelectedIds(defaultSelected);
@@ -58,7 +82,6 @@ export function WeeklyComparisonView({ userId }: Props) {
 
   return (
     <div className="space-y-6">
-      {/* Header & Multi-Week Selector Drawer */}
       <div className="rounded-2xl border border-[var(--border)] bg-[var(--bg-surface)] p-4 sm:p-6 shadow-sm space-y-4">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div>
@@ -75,7 +98,6 @@ export function WeeklyComparisonView({ userId }: Props) {
           </span>
         </div>
 
-        {/* Weekly Report Selector Checklist */}
         {loading ? (
           <p className="text-xs text-[var(--text-muted)]">Loading report history...</p>
         ) : history.length === 0 ? (
@@ -117,7 +139,6 @@ export function WeeklyComparisonView({ userId }: Props) {
         )}
       </div>
 
-      {/* Comparison Grid Results */}
       {selectedReports.length === 0 ? (
         <div className="rounded-2xl border border-[var(--border)] bg-[var(--bg-surface)] p-8 text-center text-xs text-[var(--text-muted)]">
           Select at least 1 weekly report above to view side-by-side comparison tables.
@@ -133,7 +154,6 @@ export function WeeklyComparisonView({ userId }: Props) {
               key={sec.sectionId}
               className="rounded-2xl border border-[var(--border)] bg-[var(--bg-surface)] overflow-hidden shadow-sm"
             >
-              {/* Section Header */}
               <div className="border-b border-[var(--border)] bg-[var(--bg-muted)]/40 px-4 py-3 flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <span className="flex h-6 w-6 items-center justify-center rounded-full bg-blue-500/10 text-xs font-bold text-blue-600">
@@ -143,38 +163,19 @@ export function WeeklyComparisonView({ userId }: Props) {
                 </div>
               </div>
 
-              {/* Mobile Cards View */}
               <div className="block md:hidden p-3 space-y-3">
                 {sec.columns.map((col) => {
                   const isNumeric = col.type === "number" || col.type === "currency" || col.isCalculatedTotal;
                   const avg = sec.columnAverages[col.key] || 0;
-                  const delta = sec.columnDeltas[col.key] || 0;
+                  const delta = sec.columnDeltas[col.key];
 
                   return (
                     <div key={col.key} className="rounded-xl border border-[var(--border)] bg-[var(--bg-primary)] p-3 space-y-2">
                       <div className="flex items-center justify-between border-b border-[var(--border)] pb-2">
                         <span className="font-bold text-xs text-[var(--text-primary)]">{col.label}</span>
-                        {isNumeric && sec.reportsData.length > 1 && (
-                          <span
-                            className={`inline-flex items-center gap-0.5 px-2 py-0.5 rounded-full text-[10px] font-bold ${
-                              delta > 0
-                                ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400"
-                                : delta < 0
-                                ? "bg-rose-500/10 text-rose-600 dark:text-rose-400"
-                                : "bg-[var(--bg-muted)] text-[var(--text-muted)]"
-                            }`}
-                          >
-                            {delta > 0 ? (
-                              <TrendingUp className="h-3 w-3 shrink-0" />
-                            ) : delta < 0 ? (
-                              <TrendingDown className="h-3 w-3 shrink-0" />
-                            ) : null}
-                            {delta > 0 ? `+${delta}%` : `${delta}%`}
-                          </span>
-                        )}
+                        {isNumeric && sec.reportsData.length > 1 && renderDeltaBadge(delta)}
                       </div>
 
-                      {/* Side-by-Side Week Values Grid */}
                       <div className="grid grid-cols-2 gap-2 text-xs pt-1">
                         {sec.reportsData.map((rptData) => {
                           const val = rptData.totals[col.key] || 0;
@@ -191,10 +192,9 @@ export function WeeklyComparisonView({ userId }: Props) {
                         })}
                       </div>
 
-                      {/* Average Banner */}
                       {isNumeric && sec.reportsData.length > 1 && (
                         <div className="rounded-lg bg-blue-500/10 p-2 flex items-center justify-between text-xs text-blue-600 dark:text-blue-400 font-bold">
-                          <span>4-Week Average:</span>
+                          <span>Selected Average:</span>
                           <span>{col.type === "currency" ? `$${avg.toLocaleString()}` : avg.toLocaleString()}</span>
                         </div>
                       )}
@@ -203,7 +203,6 @@ export function WeeklyComparisonView({ userId }: Props) {
                 })}
               </div>
 
-              {/* Desktop Side-by-Side Table Matrix */}
               <div className="hidden md:block overflow-x-auto">
                 <table className="w-full text-left text-xs border-collapse">
                   <thead>
@@ -233,7 +232,7 @@ export function WeeklyComparisonView({ userId }: Props) {
                     {sec.columns.map((col) => {
                       const isNumeric = col.type === "number" || col.type === "currency" || col.isCalculatedTotal;
                       const avg = sec.columnAverages[col.key] || 0;
-                      const delta = sec.columnDeltas[col.key] || 0;
+                      const delta = sec.columnDeltas[col.key];
 
                       return (
                         <tr key={col.key} className="hover:bg-[var(--bg-muted)]/30 transition-colors">
@@ -270,26 +269,7 @@ export function WeeklyComparisonView({ userId }: Props) {
                                   : "—"}
                               </td>
                               <td className="px-3 py-2.5 text-center font-bold border-l border-[var(--border)] bg-blue-500/5">
-                                {isNumeric ? (
-                                  <span
-                                    className={`inline-flex items-center gap-0.5 px-2 py-0.5 rounded-full text-[11px] font-bold ${
-                                      delta > 0
-                                        ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400"
-                                        : delta < 0
-                                        ? "bg-rose-500/10 text-rose-600 dark:text-rose-400"
-                                        : "bg-[var(--bg-muted)] text-[var(--text-muted)]"
-                                    }`}
-                                  >
-                                    {delta > 0 ? (
-                                      <TrendingUp className="h-3 w-3 shrink-0" />
-                                    ) : delta < 0 ? (
-                                      <TrendingDown className="h-3 w-3 shrink-0" />
-                                    ) : null}
-                                    {delta > 0 ? `+${delta}%` : `${delta}%`}
-                                  </span>
-                                ) : (
-                                  "—"
-                                )}
+                                {isNumeric ? renderDeltaBadge(delta) : "—"}
                               </td>
                             </>
                           )}

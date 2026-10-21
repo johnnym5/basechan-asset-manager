@@ -61,9 +61,7 @@ export function ReportEditor({ userId, userName, userEmail, isAdmin }: Props) {
         const parsed = JSON.parse(saved);
         if (Array.isArray(parsed) && parsed.length > 0) {
           setCategories(parsed);
-          if (!parsed.includes(activeCategory)) {
-            setActiveCategory(parsed[0]);
-          }
+          setActiveCategory((prev) => (parsed.includes(prev) ? prev : parsed[0]));
         }
       }
     } catch (e) {

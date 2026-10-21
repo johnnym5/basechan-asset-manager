@@ -20,7 +20,6 @@ export async function fetchGlobalAdminTemplate(): Promise<ReportSectionDef[]> {
     console.warn("Could not fetch global admin template:", err);
   }
 
-  // Returns empty array by default so staff/admins construct their own templates on first usage
   return [];
 }
 
@@ -94,7 +93,7 @@ export async function fetchMergedTemplate(userId: string): Promise<ReportSection
 }
 
 /**
- * Computes a unique document ID for a report by user, year, week, and category.
+ * Computes a unique canonical document ID for a report by user, year, week, and category.
  */
 export function getReportDocId(
   userId: string,
@@ -186,7 +185,7 @@ export async function fetchUserWeeklyReportsHistory(userId: string): Promise<Wee
 }
 
 /**
- * Fetches or compiles a MonthlyPackage document for a user.
+ * Fetches or compiles a MonthlyPackage document for a user with freshness validation.
  */
 export async function fetchOrCompileMonthlyPackage(
   userId: string,
@@ -196,19 +195,24 @@ export async function fetchOrCompileMonthlyPackage(
 ): Promise<MonthlyPackage> {
   const { compileMonthlyPackage } = await import("@/lib/reportingUtils");
   const docId = `${userId}_${year}_M${String(month).padStart(2, "0")}`;
+
+  const history = await fetchUserWeeklyReportsHistory(userId);
+  const compiled = compileMonthlyPackage(userId, userName, year, month, history);
+
   try {
     const docRef = doc(db, "monthlyPackages", docId);
     const snap = await getDoc(docRef);
     if (snap.exists()) {
-      return { id: snap.id, ...snap.data() } as MonthlyPackage;
+      const cached = { id: snap.id, ...snap.data() } as MonthlyPackage;
+      const cachedIds = (cached.includedWeeklyReportIds || []).slice().sort().join(",");
+      const freshIds = compiled.includedWeeklyReportIds.slice().sort().join(",");
+      if (cachedIds === freshIds) {
+        return cached;
+      }
     }
   } catch (err) {
-    console.warn(`Could not fetch monthly package ${docId}:`, err);
+    console.warn(`Could not fetch cached monthly package ${docId}:`, err);
   }
-
-  // Compile on-demand from weekly reports history
-  const history = await fetchUserWeeklyReportsHistory(userId);
-  const compiled = compileMonthlyPackage(userId, userName, year, month, history);
 
   if (compiled.includedWeeklyReportIds.length > 0) {
     try {
@@ -254,7 +258,6 @@ export async function grantLateUnlock(
   const requestId = `${userId}_${weekIdentifier}`;
   const docRef = doc(db, "lateUnlockRequests", requestId);
 
-  // Expiration set to 24 hours from grant time
   const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000);
 
   await setDoc(
@@ -270,8 +273,7 @@ export async function grantLateUnlock(
     { merge: true }
   );
 
-  // Also update report status if document exists
-  const reportDocId = `${userId}_${weekIdentifier}`;
+  const reportDocId = getReportDocId(userId, year, weekNumber);
   const reportRef = doc(db, "weeklyReports", reportDocId);
   await setDoc(reportRef, { status: "LATE_UNLOCKED", updatedAt: serverTimestamp() }, { merge: true });
 }

@@ -1,5 +1,8 @@
 export type UserRole = "SUPER_ADMIN" | "STAFF" | "UNAUTHORIZED";
 export type ResourceKey = "staff_inventory" | "physical_assets" | "digital_credentials" | "workbooks" | "facilities" | "reporting";
+
+export type FirestoreTimestampValue = string | number | Date | unknown;
+
 export interface WorkspaceLink {
   id: string;
   title: string;
@@ -8,10 +11,11 @@ export interface WorkspaceLink {
   audience: "all" | "selected";
   assignedUids: string[];
   createdBy: string;
-  createdAt?: any;
-  updatedAt?: any;
+  createdAt?: FirestoreTimestampValue;
+  updatedAt?: FirestoreTimestampValue;
   archived?: boolean;
 }
+
 export type GrantScope = "assigned" | "branch" | "all";
 export type GrantAction = "read" | "create" | "edit" | "archive" | "restore" | "secretWrite";
 
@@ -26,7 +30,7 @@ export interface AccessGrant {
   branch?: string;
   department?: string;
   grants: Partial<Record<ResourceKey, ResourceGrant>>;
-  updatedAt?: any;
+  updatedAt?: FirestoreTimestampValue;
   updatedBy?: string;
 }
 
@@ -39,14 +43,14 @@ export interface UserProfile {
   branch?: string;
   department?: string;
   staffId?: string;
-  lastLogin?: any;
-  onboardingCompletedAt?: any;
+  lastLogin?: FirestoreTimestampValue;
+  onboardingCompletedAt?: FirestoreTimestampValue;
 }
 
 export interface StaffMember {
   id: string;
   archived?: boolean;
-  archivedAt?: any;
+  archivedAt?: FirestoreTimestampValue;
   archivedBy?: string;
   uid?: string;
   sn?: number | string;
@@ -58,8 +62,8 @@ export interface StaffMember {
   phone?: string;
   registeredUnder?: string;
   branch: string;
-  createdAt?: any;
-  updatedAt?: any;
+  createdAt?: FirestoreTimestampValue;
+  updatedAt?: FirestoreTimestampValue;
 }
 
 export interface PhysicalAsset {
@@ -80,15 +84,16 @@ export interface PhysicalAsset {
   status: "Active" | "Repair" | "Retired" | string;
   isLocked: boolean;
   customAttributes?: Record<string, string>;
-  lastStaffCheckin?: any;
-  createdAt?: any;
-  updatedAt?: any;
+  lastStaffCheckin?: FirestoreTimestampValue;
+  createdAt?: FirestoreTimestampValue;
+  updatedAt?: FirestoreTimestampValue;
   archived?: boolean;
-  archivedAt?: any;
+  archivedAt?: FirestoreTimestampValue;
   archivedBy?: string;
 }
 
 export type AssetCheckStatus = "unverified" | "verified" | "missing" | "moved" | "damaged";
+
 export interface StocktakeRound {
   id: string;
   title: string;
@@ -96,9 +101,10 @@ export interface StocktakeRound {
   status: "open" | "closed";
   assignedUids: string[];
   createdBy: string;
-  createdAt?: any;
-  closedAt?: any;
+  createdAt?: FirestoreTimestampValue;
+  closedAt?: FirestoreTimestampValue;
 }
+
 export interface StocktakeItem {
   id: string;
   roundId: string;
@@ -109,9 +115,10 @@ export interface StocktakeItem {
   status: AssetCheckStatus;
   note?: string;
   checkedBy?: string;
-  checkedAt?: any;
-  history?: Array<{ status: AssetCheckStatus; note?: string; checkedBy: string; checkedAt: any }>;
+  checkedAt?: FirestoreTimestampValue;
+  history?: Array<{ status: AssetCheckStatus; note?: string; checkedBy: string; checkedAt: FirestoreTimestampValue }>;
 }
+
 export interface InboxTask {
   id: string;
   type: "repair_request" | "stocktake" | "handover" | "general_task" | string;
@@ -125,8 +132,8 @@ export interface InboxTask {
   assignedToEmail?: string;
   assetId?: string;
   assetTag?: string;
-  createdAt?: any;
-  updatedAt?: any;
+  createdAt?: FirestoreTimestampValue;
+  updatedAt?: FirestoreTimestampValue;
   localOnly?: boolean;
   localSyncFailed?: boolean;
 }
@@ -145,10 +152,10 @@ export interface DigitalCredential {
   passwordVaultLocation?: string;
   rawPass?: string;
   vaultStatus: "SECURED" | "UNRESTRICTED";
-  createdAt?: any;
-  updatedAt?: any;
+  createdAt?: FirestoreTimestampValue;
+  updatedAt?: FirestoreTimestampValue;
   archived?: boolean;
-  archivedAt?: any;
+  archivedAt?: FirestoreTimestampValue;
   archivedBy?: string;
 }
 
@@ -164,10 +171,10 @@ export interface WorkbookDocument {
   department: string;
   accessPermissions: "ALL" | "RESTRICTED" | string;
   lastAuditDate?: string;
-  createdAt?: any;
-  updatedAt?: any;
+  createdAt?: FirestoreTimestampValue;
+  updatedAt?: FirestoreTimestampValue;
   archived?: boolean;
-  archivedAt?: any;
+  archivedAt?: FirestoreTimestampValue;
   archivedBy?: string;
 }
 
@@ -186,10 +193,10 @@ export interface FacilityItem {
   assignedOrSharedBranch?: string;
   maintenanceNotes?: string;
   purchaseDate?: string;
-  createdAt?: any;
-  updatedAt?: any;
+  createdAt?: FirestoreTimestampValue;
+  updatedAt?: FirestoreTimestampValue;
   archived?: boolean;
-  archivedAt?: any;
+  archivedAt?: FirestoreTimestampValue;
   archivedBy?: string;
 }
 
@@ -205,7 +212,7 @@ export interface AuditLog {
   details: string;
   changes?: Record<string, { from: unknown; to: unknown }>;
   visibilityUids: string[];
-  timestamp: any;
+  timestamp: FirestoreTimestampValue;
 }
 
 export interface VaultAccessLog {
@@ -215,5 +222,5 @@ export interface VaultAccessLog {
   credentialId: string;
   platform: string;
   loginEmail: string;
-  timestamp: any;
+  timestamp: FirestoreTimestampValue;
 }

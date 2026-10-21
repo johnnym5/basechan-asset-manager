@@ -1,3 +1,5 @@
+import { FirestoreTimestampValue } from "./assets";
+
 export type ColumnType = "text" | "number" | "currency" | "date";
 
 export interface ReportColumnDef {
@@ -19,7 +21,7 @@ export interface ReportTemplate {
   userId: string | null; // null for global admin template
   reportCategory?: string; // e.g. "B2C Direct", "B2B Partnerships", "General Operations"
   sections: ReportSectionDef[];
-  updatedAt?: any;
+  updatedAt?: FirestoreTimestampValue;
   updatedBy?: string;
 }
 
@@ -34,7 +36,7 @@ export interface WeeklyReport {
   weekStartDate: string;
   weekEndDate: string;
   status: "DRAFT" | "SUBMITTED" | "OVERDUE" | "LATE_UNLOCKED";
-  submittedAt?: any;
+  submittedAt?: FirestoreTimestampValue;
   snapshotTemplate: ReportSectionDef[];
   data: Record<string, Array<Record<string, any>>>;
   totals?: Record<string, Record<string, number>>;
@@ -47,7 +49,7 @@ export interface MonthlyPackage {
   reportCategory?: string;
   year: number;
   month: number;
-  compiledAt: any;
+  compiledAt: FirestoreTimestampValue;
   includedWeeklyReportIds: string[];
   sectionSummaries: Record<
     string,
@@ -64,8 +66,8 @@ export interface LateUnlockRequest {
   userId: string;
   weekIdentifier: string; // e.g. "2025_W10"
   grantedBy: string;
-  grantedAt: any;
-  expiresAt: any;
+  grantedAt: FirestoreTimestampValue;
+  expiresAt: FirestoreTimestampValue;
   status: "ACTIVE" | "USED" | "EXPIRED";
 }
 
@@ -81,6 +83,6 @@ export interface ReportComparisonResult {
       totals: Record<string, number>;
     }>;
     columnAverages: Record<string, number>;
-    columnDeltas: Record<string, number>; // Percentage change from oldest to newest
+    columnDeltas: Record<string, number | "NEW">;
   }>;
 }

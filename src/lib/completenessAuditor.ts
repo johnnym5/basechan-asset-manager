@@ -9,7 +9,7 @@ export function auditAssetCompleteness(asset: Partial<PhysicalAsset>): MissingDe
     missing.push("Serial Number");
   }
 
-  if (!asset.tag || asset.tag.startsWith("UNASSIGNED") || asset.tag.trim() === "" || asset.tag === "NaN") {
+  if (!asset.tag || asset.tag.startsWith("PROVISIONAL-") || asset.tag.startsWith("UNASSIGNED") || asset.tag.trim() === "" || asset.tag === "NaN") {
     missing.push("Asset Tag ID");
   }
 

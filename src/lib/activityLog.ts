@@ -50,12 +50,15 @@ export function buildActivityLog(
   const displayValue = (value: unknown) => value === "" || value === null ? "—" : String(value);
   const changedDetails = Object.entries(changeMap).map(([key, value]) => `${key}: ${displayValue(value.from)} → ${displayValue(value.to)}`).join("; ");
   const visibilityUids = new Set<string>([actor.uid, ...(input.additionalVisibilityUids || [])]);
-  const recipient = after || record || before;
-  if (recipient) {
-    for (const key of ["assignedStaffUid", "assignedUserUid"]) {
-      if (typeof recipient[key] === "string" && recipient[key]) visibilityUids.add(recipient[key]);
+
+  for (const docObj of [before, after, record]) {
+    if (docObj) {
+      for (const key of ["assignedStaffUid", "assignedUserUid"]) {
+        if (typeof docObj[key] === "string" && docObj[key]) visibilityUids.add(docObj[key]);
+      }
     }
   }
+
   return {
     actorUid: actor.uid,
     actorEmail: actor.email,

@@ -20,7 +20,8 @@ export function getISOWeekDetails(dateInput: Date = new Date()): {
   // Set to nearest Thursday: current date + 4 - current day number (make Sunday = 7)
   const dayNum = d.getUTCDay() || 7;
   d.setUTCDate(d.getUTCDate() + 4 - dayNum);
-  const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1));
+  const isoYear = d.getUTCFullYear();
+  const yearStart = new Date(Date.UTC(isoYear, 0, 1));
   const weekNumber = Math.ceil(((d.getTime() - yearStart.getTime()) / 86400000 + 1) / 7);
 
   // Determine Monday (start of week) and Sunday (end of week)
@@ -42,7 +43,7 @@ export function getISOWeekDetails(dateInput: Date = new Date()): {
   };
 
   return {
-    year: monday.getFullYear(),
+    year: isoYear,
     month: monday.getMonth() + 1, // Month index 1-12 based on Monday
     weekNumber,
     weekStartDate: formatYYYMMDD(monday),
@@ -78,11 +79,16 @@ export function mergeTemplates(
  */
 export function parseNumericCell(value: any): number {
   if (value === null || value === undefined || value === "") return 0;
-  if (typeof value === "number") return Number.isNaN(value) ? 0 : value;
+  if (typeof value === "number") return Number.isNaN(value) || !Number.isFinite(value) ? 0 : value;
   if (typeof value === "string") {
-    const cleaned = value.replace(/[^0-9.-]+/g, "");
+    let str = value.trim();
+    if (str === "" || str === "—" || str === "N/A" || str === "nil" || str === "null") return 0;
+    if (/^\(.*\)$/.test(str)) {
+      str = "-" + str.slice(1, -1);
+    }
+    const cleaned = str.replace(/,/g, "").replace(/[^0-9.-]+/g, "");
     const parsed = parseFloat(cleaned);
-    return Number.isNaN(parsed) ? 0 : parsed;
+    return Number.isNaN(parsed) || !Number.isFinite(parsed) ? 0 : parsed;
   }
   return 0;
 }
@@ -117,13 +123,14 @@ export function calculateSectionTotals(
 /**
  * Computes percentage delta from previous to current value safely.
  */
-export function calculatePercentageDelta(current: number, previous: number): number {
+export function calculatePercentageDelta(current: number, previous: number): number | "NEW" {
   if (previous === 0) {
     if (current === 0) return 0;
-    return 100; // 0 to positive value is +100%
+    return "NEW";
   }
   const rawDelta = ((current - previous) / Math.abs(previous)) * 100;
-  return Math.round(rawDelta * 100) / 100; // Round to 2 decimal places
+  if (!Number.isFinite(rawDelta)) return "NEW";
+  return Math.round(rawDelta * 100) / 100;
 }
 
 /**
@@ -192,7 +199,7 @@ export function compareWeeklyReports(reports: WeeklyReport[]): ReportComparisonR
 
     const reportCount = sortedReports.length;
     const columnAverages: Record<string, number> = {};
-    const columnDeltas: Record<string, number> = {};
+    const columnDeltas: Record<string, number | "NEW"> = {};
 
     const oldestReportTotals = reportsData[0]?.totals || {};
     const newestReportTotals = reportsData[reportsData.length - 1]?.totals || {};
@@ -212,7 +219,7 @@ export function compareWeeklyReports(reports: WeeklyReport[]): ReportComparisonR
       columns,
       reportsData,
       columnAverages,
-      columnDeltas,
+      columnDeltas: columnDeltas as Record<string, number>,
     });
   });
 
