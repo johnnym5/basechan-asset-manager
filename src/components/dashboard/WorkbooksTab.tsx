@@ -157,7 +157,7 @@ export const WorkbooksTab: React.FC<WorkbooksTabProps> = ({ workbooks, grant, sh
             <p className="text-xs text-[var(--text-muted)] mt-1">Try adjusting your search criteria.</p>
           </div>
         ) : (
-          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-4 lg:grid-cols-3 xl:grid-cols-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 sm:gap-4">
             {filteredWorkbooks.map((wb) => {
               const hasOwner = wb.primaryOwner && wb.primaryOwner.trim().toLowerCase() !== "unassigned";
               return (

@@ -21,7 +21,7 @@ export function WorkspaceCards({ links, favorites, onToggleFavorite, isAdmin = f
   onArchive?: (link: WorkspaceLink) => Promise<void>;
   onRestore?: (link: WorkspaceLink) => Promise<void>;
 }) {
-  return <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">{links.map((link) => {
+  return <div className="grid gap-3 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">{links.map((link) => {
     const host = (() => { try { return new URL(link.url).hostname.replace(/^www\./, ""); } catch { return link.url; } })();
     return <article key={link.id} className="group relative overflow-hidden rounded-xl border border-[var(--border)] bg-[var(--bg-surface)] p-4 shadow-sm transition duration-300 hover:-translate-y-0.5 hover:shadow-lg">
       <div className="flex items-start gap-3">

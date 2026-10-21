@@ -276,7 +276,7 @@ export const HardwareTab: React.FC<HardwareTabProps> = ({
             <p className="text-xs text-[var(--text-muted)] mt-1">Try clearing or adjusting your search filters.</p>
           </div>
         ) : (
-          <div className="@container grid grid-cols-1 gap-3 @sm:grid-cols-2 @lg:grid-cols-3 @2xl:grid-cols-4 sm:gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 sm:gap-4">
             {visibleAssets.map((asset) => {
               const hasUser = asset.assignedStaff && asset.assignedStaff.trim().toLowerCase() !== "unassigned";
               return (
