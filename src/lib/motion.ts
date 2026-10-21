@@ -1,114 +1,45 @@
-import gsap from "gsap";
+import { Transition, Variants } from "framer-motion";
 
-export function isReducedMotion(): boolean {
-  if (typeof window === "undefined") return false;
-  try {
-    return window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-  } catch {
-    return false;
-  }
-}
-
-export const EASINGS = {
-  SPRING_OUT: "back.out(1.5)",
-  SMOOTH_OUT: "power3.out",
-  EXPO_OUT: "expo.out",
+export const SPRING_TRANSITION: Transition = {
+  type: "spring",
+  stiffness: 350,
+  damping: 25,
 };
 
-/**
- * Page / Tab entrance animation
- */
-export function animatePageEntrance(target: HTMLElement | string) {
-  if (isReducedMotion() || typeof window === "undefined") return;
-  gsap.fromTo(
-    target,
-    { opacity: 0, y: 16 },
-    { opacity: 1, y: 0, duration: 0.35, ease: EASINGS.SMOOTH_OUT, clearProps: "transform" }
-  );
-}
+export const SMOOTH_TRANSITION: Transition = {
+  duration: 0.25,
+  ease: [0.25, 0.1, 0.25, 1],
+};
 
-/**
- * Liquid GSAP spring pop-in for modals and dialogs
- */
-export function animateModalPopIn(modalEl: HTMLElement | null, backdropEl?: HTMLElement | null) {
-  if (typeof window === "undefined" || !modalEl) return;
+export const MODAL_BACKDROP_VARIANTS: Variants = {
+  hidden: { opacity: 0 },
+  visible: { opacity: 1 },
+  exit: { opacity: 0 },
+};
 
-  if (isReducedMotion()) {
-    if (backdropEl) gsap.set(backdropEl, { opacity: 1 });
-    gsap.set(modalEl, { opacity: 1, scale: 1, y: 0 });
-    return;
-  }
+export const MODAL_CONTENT_VARIANTS: Variants = {
+  hidden: { opacity: 0, scale: 0.94, y: 12 },
+  visible: { opacity: 1, scale: 1, y: 0 },
+  exit: { opacity: 0, scale: 0.95, y: 8 },
+};
 
-  if (backdropEl) {
-    gsap.fromTo(backdropEl, { opacity: 0 }, { opacity: 1, duration: 0.2, ease: "power2.out" });
-  }
+export const DRAWER_VARIANTS: Variants = {
+  hidden: { y: "100%", opacity: 0.8 },
+  visible: { y: 0, opacity: 1 },
+  exit: { y: "100%", opacity: 0 },
+};
 
-  gsap.fromTo(
-    modalEl,
-    { opacity: 0, scale: 0.94, y: 12 },
-    { opacity: 1, scale: 1, y: 0, duration: 0.32, ease: EASINGS.SPRING_OUT }
-  );
-}
+export const STAGGER_CONTAINER_VARIANTS: Variants = {
+  hidden: { opacity: 0 },
+  visible: {
+    opacity: 1,
+    transition: {
+      staggerChildren: 0.05,
+    },
+  },
+};
 
-/**
- * Liquid GSAP pop-out exit animation for modals
- */
-export function animateModalPopOut(
-  modalEl: HTMLElement | null,
-  backdropEl: HTMLElement | null | undefined,
-  onComplete: () => void
-) {
-  if (typeof window === "undefined" || !modalEl) {
-    onComplete();
-    return;
-  }
-
-  if (isReducedMotion()) {
-    onComplete();
-    return;
-  }
-
-  const tl = gsap.timeline({ onComplete });
-  if (backdropEl) {
-    tl.to(backdropEl, { opacity: 0, duration: 0.15, ease: "power2.in" }, 0);
-  }
-  tl.to(modalEl, { opacity: 0, scale: 0.95, y: 8, duration: 0.15, ease: "power2.in" }, 0);
-}
-
-/**
- * Mobile Drawer Slide-In Animation
- */
-export function animateDrawerSlideIn(drawerEl: HTMLElement | null) {
-  if (typeof window === "undefined" || !drawerEl) return;
-  if (isReducedMotion()) {
-    gsap.set(drawerEl, { yPercent: 0, opacity: 1 });
-    return;
-  }
-  gsap.fromTo(
-    drawerEl,
-    { yPercent: 100, opacity: 0.8 },
-    { yPercent: 0, opacity: 1, duration: 0.28, ease: EASINGS.SMOOTH_OUT }
-  );
-}
-
-/**
- * Staggered Card Entrance Animation
- */
-export function animateStaggerCards(
-  targets: HTMLElement[] | NodeListOf<HTMLElement> | string
-) {
-  if (typeof window === "undefined" || isReducedMotion()) return;
-  gsap.fromTo(
-    targets,
-    { opacity: 0, y: 14, scale: 0.98 },
-    {
-      opacity: 1,
-      y: 0,
-      scale: 1,
-      duration: 0.3,
-      stagger: 0.04,
-      ease: EASINGS.SMOOTH_OUT,
-      clearProps: "transform",
-    }
-  );
-}
+export const STAGGER_ITEM_VARIANTS: Variants = {
+  hidden: { opacity: 0, y: 14, scale: 0.98 },
+  visible: { opacity: 1, y: 0, scale: 1 },
+};
