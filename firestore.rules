@@ -189,11 +189,13 @@ service cloud.firestore {
 
     match /reportTemplates/{templateId} {
       allow read: if signedIn();
-      allow create, update: if isAdmin() || (isStaff() && templateId == request.auth.uid && request.resource.data.get('userId', '') == request.auth.uid);
+      allow create, update: if isAdmin() || (isStaff() && (templateId == request.auth.uid || request.resource.data.get('userId', '') == request.auth.uid));
       allow delete: if isAdmin() || (isStaff() && templateId == request.auth.uid);
     }
     match /weeklyReports/{reportId} {
       allow read: if isAdmin() || (isStaff() && (
+        resource == null ||
+        reportId.matches('^' + request.auth.uid + '_.*') ||
         resource.data.get('userId', '') == request.auth.uid ||
         resource.data.get('ownerEmail', '') == request.auth.token.email
       ));
@@ -206,13 +208,14 @@ service cloud.firestore {
       );
       allow update: if isAdmin() || (
         isStaff() &&
-        (resource.data.get('userId', '') == request.auth.uid || resource.data.get('ownerEmail', '') == request.auth.token.email) &&
-        (resource.data.get('status', 'DRAFT') in ['DRAFT', 'LATE_UNLOCKED'])
+        (resource.data.get('userId', '') == request.auth.uid || resource.data.get('ownerEmail', '') == request.auth.token.email)
       );
       allow delete: if isAdmin();
     }
     match /monthlyPackages/{packageId} {
       allow read: if isAdmin() || (isStaff() && (
+        resource == null ||
+        packageId.matches('^' + request.auth.uid + '_.*') ||
         resource.data.get('userId', '') == request.auth.uid ||
         resource.data.get('ownerEmail', '') == request.auth.token.email
       ));
@@ -224,8 +227,9 @@ service cloud.firestore {
     }
     match /lateUnlockRequests/{requestId} {
       allow read: if isAdmin() || (isStaff() && (
-        resource.data.get('userId', '') == request.auth.uid ||
-        requestId.matches('^' + request.auth.uid + '_.*')
+        resource == null ||
+        requestId.matches('^' + request.auth.uid + '_.*') ||
+        resource.data.get('userId', '') == request.auth.uid
       ));
       allow create, update, delete: if isAdmin();
     }
