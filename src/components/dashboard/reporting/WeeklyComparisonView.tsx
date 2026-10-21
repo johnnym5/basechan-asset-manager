@@ -143,8 +143,68 @@ export function WeeklyComparisonView({ userId }: Props) {
                 </div>
               </div>
 
-              {/* Side-by-Side Table Matrix */}
-              <div className="overflow-x-auto">
+              {/* Mobile Cards View */}
+              <div className="block md:hidden p-3 space-y-3">
+                {sec.columns.map((col) => {
+                  const isNumeric = col.type === "number" || col.type === "currency" || col.isCalculatedTotal;
+                  const avg = sec.columnAverages[col.key] || 0;
+                  const delta = sec.columnDeltas[col.key] || 0;
+
+                  return (
+                    <div key={col.key} className="rounded-xl border border-[var(--border)] bg-[var(--bg-primary)] p-3 space-y-2">
+                      <div className="flex items-center justify-between border-b border-[var(--border)] pb-2">
+                        <span className="font-bold text-xs text-[var(--text-primary)]">{col.label}</span>
+                        {isNumeric && sec.reportsData.length > 1 && (
+                          <span
+                            className={`inline-flex items-center gap-0.5 px-2 py-0.5 rounded-full text-[10px] font-bold ${
+                              delta > 0
+                                ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400"
+                                : delta < 0
+                                ? "bg-rose-500/10 text-rose-600 dark:text-rose-400"
+                                : "bg-[var(--bg-muted)] text-[var(--text-muted)]"
+                            }`}
+                          >
+                            {delta > 0 ? (
+                              <TrendingUp className="h-3 w-3 shrink-0" />
+                            ) : delta < 0 ? (
+                              <TrendingDown className="h-3 w-3 shrink-0" />
+                            ) : null}
+                            {delta > 0 ? `+${delta}%` : `${delta}%`}
+                          </span>
+                        )}
+                      </div>
+
+                      {/* Side-by-Side Week Values Grid */}
+                      <div className="grid grid-cols-2 gap-2 text-xs pt-1">
+                        {sec.reportsData.map((rptData) => {
+                          const val = rptData.totals[col.key] || 0;
+                          return (
+                            <div key={rptData.reportId} className="rounded-lg bg-[var(--bg-surface)] p-2 border border-[var(--border)]">
+                              <span className="text-[9px] text-[var(--text-muted)] font-semibold truncate block">
+                                {rptData.weekLabel}
+                              </span>
+                              <span className="text-xs font-bold text-[var(--text-primary)] block">
+                                {isNumeric ? (col.type === "currency" ? `$${val.toLocaleString()}` : val.toLocaleString()) : "—"}
+                              </span>
+                            </div>
+                          );
+                        })}
+                      </div>
+
+                      {/* Average Banner */}
+                      {isNumeric && sec.reportsData.length > 1 && (
+                        <div className="rounded-lg bg-blue-500/10 p-2 flex items-center justify-between text-xs text-blue-600 dark:text-blue-400 font-bold">
+                          <span>4-Week Average:</span>
+                          <span>{col.type === "currency" ? `$${avg.toLocaleString()}` : avg.toLocaleString()}</span>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+
+              {/* Desktop Side-by-Side Table Matrix */}
+              <div className="hidden md:block overflow-x-auto">
                 <table className="w-full text-left text-xs border-collapse">
                   <thead>
                     <tr className="border-b border-[var(--border)] bg-[var(--bg-muted)]/20 text-[var(--text-muted)] uppercase tracking-wider text-[11px] font-bold">

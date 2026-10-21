@@ -504,8 +504,113 @@ export function ReportEditor({ userId, userName, userEmail, isAdmin }: Props) {
                   )}
                 </div>
 
-                {/* Multi-column Grid Table */}
-                <div className="overflow-x-auto">
+                {/* Mobile Cards View */}
+                <div className="block md:hidden p-3 space-y-3">
+                  {rows.map((row, rIdx) => {
+                    const firstCol = sec.columns[0];
+                    const itemTitle = firstCol ? row[firstCol.key] || `Item #${rIdx + 1}` : `Item #${rIdx + 1}`;
+                    const metricCols = sec.columns.slice(firstCol ? 1 : 0);
+
+                    return (
+                      <div
+                        key={rIdx}
+                        className="rounded-xl border border-[var(--border)] bg-[var(--bg-primary)] p-3 space-y-2"
+                      >
+                        <div className="flex items-center justify-between border-b border-[var(--border)] pb-2">
+                          <div className="flex items-center gap-2">
+                            <span className="flex h-5 w-5 items-center justify-center rounded-full bg-blue-500/10 text-[10px] font-bold text-blue-600">
+                              {rIdx + 1}
+                            </span>
+                            <span className="font-bold text-xs text-[var(--text-primary)]">
+                              {itemTitle}
+                            </span>
+                          </div>
+
+                          {!isReadonly && rows.length > 1 && (
+                            <button
+                              type="button"
+                              onClick={() => handleDeleteRow(sec.id, rIdx)}
+                              className="p-1 rounded text-rose-500 hover:bg-rose-500/10"
+                              title="Delete Row"
+                            >
+                              <Trash2 className="h-3.5 w-3.5" />
+                            </button>
+                          )}
+                        </div>
+
+                        {/* First column edit if text */}
+                        {firstCol && !isReadonly && (
+                          <div>
+                            <label className="text-[10px] font-semibold text-[var(--text-muted)] uppercase block mb-1">
+                              {firstCol.label}
+                            </label>
+                            <input
+                              type="text"
+                              value={row[firstCol.key] ?? ""}
+                              onChange={(e) => handleCellChange(sec.id, rIdx, firstCol.key, e.target.value)}
+                              placeholder={firstCol.label}
+                              className="w-full rounded-lg border border-[var(--border)] bg-[var(--bg-surface)] px-2.5 py-1.5 text-xs font-medium text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            />
+                          </div>
+                        )}
+
+                        {/* Numeric Metric Input Grid */}
+                        <div className="grid grid-cols-2 gap-2 pt-1">
+                          {metricCols.map((col) => {
+                            const val = row[col.key] ?? "";
+                            return (
+                              <div key={col.key} className="rounded-lg bg-[var(--bg-surface)] border border-[var(--border)] p-2">
+                                <label className="text-[9px] font-bold text-[var(--text-muted)] uppercase truncate block mb-0.5">
+                                  {col.label}
+                                </label>
+                                {isReadonly ? (
+                                  <span className="text-xs font-bold text-[var(--text-primary)] block">
+                                    {col.type === "currency" && val !== "" ? `$${val}` : val || "0"}
+                                  </span>
+                                ) : (
+                                  <input
+                                    type={col.type === "number" || col.type === "currency" ? "number" : col.type === "date" ? "date" : "text"}
+                                    value={val}
+                                    onChange={(e) => handleCellChange(sec.id, rIdx, col.key, e.target.value)}
+                                    placeholder="0"
+                                    className="w-full bg-transparent text-xs font-bold text-[var(--text-primary)] focus:outline-none"
+                                  />
+                                )}
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    );
+                  })}
+
+                  {/* Mobile Live Section Totals Summary Footer */}
+                  <div className="rounded-xl border border-blue-500/20 bg-blue-500/5 p-3 space-y-2">
+                    <span className="text-[10px] uppercase font-bold text-blue-600 dark:text-blue-400 tracking-wider block">
+                      Section Live Totals
+                    </span>
+                    <div className="grid grid-cols-2 gap-2">
+                      {sec.columns.map((col) => {
+                        const isNumeric = col.type === "number" || col.type === "currency" || col.isCalculatedTotal;
+                        const totalVal = totals[col.key] || 0;
+                        if (!isNumeric) return null;
+                        return (
+                          <div key={col.key} className="rounded-lg bg-[var(--bg-surface)] p-2 border border-[var(--border)]">
+                            <span className="text-[9px] text-[var(--text-muted)] font-semibold truncate block">
+                              {col.label}
+                            </span>
+                            <span className="text-xs font-bold text-blue-600 dark:text-blue-400 block">
+                              {col.type === "currency" ? `$${totalVal.toLocaleString()}` : totalVal.toLocaleString()}
+                            </span>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Desktop Multi-column Grid Table */}
+                <div className="hidden md:block overflow-x-auto">
                   <table className="w-full text-left text-xs border-collapse">
                     <thead>
                       <tr className="border-b border-[var(--border)] bg-[var(--bg-muted)]/20 text-[var(--text-muted)] uppercase tracking-wider text-[11px] font-bold">

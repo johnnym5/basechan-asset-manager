@@ -207,7 +207,68 @@ export function MonthlyComparisonView({ userId, userName }: Props) {
                 </div>
               </div>
 
-              <div className="overflow-x-auto">
+              {/* Mobile Cards View */}
+              <div className="block md:hidden p-3 space-y-3">
+                {Object.keys(
+                  selectedPackages.find((p) => p.sectionSummaries?.[secId])?.sectionSummaries?.[secId]?.columnTotals || {}
+                ).map((colKey) => {
+                  const oldestPkg = selectedPackages[selectedPackages.length - 1];
+                  const newestPkg = selectedPackages[0];
+
+                  const oldestVal = oldestPkg?.sectionSummaries?.[secId]?.columnTotals?.[colKey] || 0;
+                  const newestVal = newestPkg?.sectionSummaries?.[secId]?.columnTotals?.[colKey] || 0;
+                  const delta = calculatePercentageDelta(newestVal, oldestVal);
+
+                  return (
+                    <div key={colKey} className="rounded-xl border border-[var(--border)] bg-[var(--bg-primary)] p-3 space-y-2">
+                      <div className="flex items-center justify-between border-b border-[var(--border)] pb-2">
+                        <span className="font-bold text-xs text-[var(--text-primary)]">Column Total: {colKey}</span>
+                        {selectedPackages.length > 1 && (
+                          <span
+                            className={`inline-flex items-center gap-0.5 px-2 py-0.5 rounded-full text-[10px] font-bold ${
+                              delta > 0
+                                ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400"
+                                : delta < 0
+                                ? "bg-rose-500/10 text-rose-600 dark:text-rose-400"
+                                : "bg-[var(--bg-muted)] text-[var(--text-muted)]"
+                            }`}
+                          >
+                            {delta > 0 ? (
+                              <TrendingUp className="h-3 w-3 shrink-0" />
+                            ) : delta < 0 ? (
+                              <TrendingDown className="h-3 w-3 shrink-0" />
+                            ) : null}
+                            {delta > 0 ? `+${delta}%` : `${delta}%`}
+                          </span>
+                        )}
+                      </div>
+
+                      <div className="grid grid-cols-2 gap-2 text-xs pt-1">
+                        {selectedPackages.map((pkg) => {
+                          const tot = pkg.sectionSummaries?.[secId]?.columnTotals?.[colKey] || 0;
+                          const avg = pkg.sectionSummaries?.[secId]?.columnAverages?.[colKey] || 0;
+                          return (
+                            <div key={pkg.id} className="rounded-lg bg-[var(--bg-surface)] p-2 border border-[var(--border)]">
+                              <span className="text-[9px] text-[var(--text-muted)] font-semibold block truncate">
+                                {MONTH_NAMES[pkg.month - 1]} {pkg.year}
+                              </span>
+                              <span className="text-xs font-bold text-blue-600 dark:text-blue-400 block">
+                                {tot.toLocaleString()}
+                              </span>
+                              <span className="text-[9px] text-[var(--text-muted)] block">
+                                Avg: {avg.toLocaleString()}/wk
+                              </span>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+
+              {/* Desktop Table View */}
+              <div className="hidden md:block overflow-x-auto">
                 <table className="w-full text-left text-xs border-collapse">
                   <thead>
                     <tr className="border-b border-[var(--border)] bg-[var(--bg-muted)]/20 text-[var(--text-muted)] uppercase tracking-wider text-[11px] font-bold">

@@ -63,7 +63,7 @@ export function AdminReportingMatrix({ adminUid, staffList }: Props) {
     loadWeekMatrix();
   }, [weekDetails.year, weekDetails.weekNumber]);
 
-  // Date / Week Navigation Handlers
+  // Date / Week / Month Navigation Handlers
   const handlePrevWeek = () => {
     setReferenceDate((prev) => {
       const updated = new Date(prev);
@@ -76,6 +76,23 @@ export function AdminReportingMatrix({ adminUid, staffList }: Props) {
     setReferenceDate((prev) => {
       const updated = new Date(prev);
       updated.setDate(updated.getDate() + 7);
+      const today = new Date();
+      return updated > today ? today : updated;
+    });
+  };
+
+  const handlePrevMonth = () => {
+    setReferenceDate((prev) => {
+      const updated = new Date(prev);
+      updated.setDate(updated.getDate() - 28);
+      return updated;
+    });
+  };
+
+  const handleNextMonth = () => {
+    setReferenceDate((prev) => {
+      const updated = new Date(prev);
+      updated.setDate(updated.getDate() + 28);
       const today = new Date();
       return updated > today ? today : updated;
     });
@@ -161,44 +178,67 @@ export function AdminReportingMatrix({ adminUid, staffList }: Props) {
             </p>
           </div>
 
-          {/* Interactive Target Week Controller */}
+          {/* Interactive Target Week & Month Controller */}
           <div className="flex items-center gap-2 flex-wrap">
             <span className="text-xs font-semibold text-[var(--text-muted)]">Target Week:</span>
 
-            <div className="inline-flex items-center gap-1.5 rounded-xl border border-[var(--border)] bg-[var(--bg-muted)]/50 p-1">
+            <div className="inline-flex items-center gap-1 rounded-xl border border-[var(--border)] bg-[var(--bg-muted)]/50 p-1">
+              {/* Previous Month */}
+              <button
+                type="button"
+                onClick={handlePrevMonth}
+                className="px-2 py-1 rounded-lg text-[11px] font-bold text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-surface)] transition-colors cursor-pointer"
+                title="Previous Month (-4 Weeks)"
+              >
+                « Month
+              </button>
+
+              {/* Previous Week */}
               <button
                 type="button"
                 onClick={handlePrevWeek}
-                className="p-1 rounded-lg text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-surface)] transition-colors"
-                title="Previous Week"
+                className="p-1 rounded-lg text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-surface)] transition-colors cursor-pointer"
+                title="Previous Week (-1 Week)"
               >
                 <ChevronLeft className="h-4 w-4" />
               </button>
 
-              <div className="inline-flex items-center gap-1.5 px-2 py-1 text-xs font-bold text-[var(--text-primary)]">
+              {/* Week Display & Direct Calendar Picker Trigger */}
+              <label className="inline-flex items-center gap-1.5 px-2 py-1 text-xs font-extrabold text-[var(--text-primary)] cursor-pointer hover:bg-[var(--bg-surface)] rounded-lg transition-colors">
                 <Calendar className="h-3.5 w-3.5 text-blue-500" />
                 <span>Week {weekDetails.weekNumber}</span>
                 <span className="text-[11px] text-[var(--text-muted)] font-medium">({weekDetails.weekStartDate})</span>
-              </div>
+                <input
+                  type="date"
+                  value={weekDetails.weekStartDate}
+                  onChange={handleDateChange}
+                  max={new Date().toISOString().split("T")[0]}
+                  aria-label="Target week start date"
+                  className="w-5 h-5 opacity-70 cursor-pointer focus:outline-none"
+                  title="Click to select any week from calendar"
+                />
+              </label>
 
-              <input
-                type="date"
-                value={weekDetails.weekStartDate}
-                onChange={handleDateChange}
-                max={new Date().toISOString().split("T")[0]}
-                aria-label="Target week start date"
-                className="w-7 h-7 p-1 rounded-lg border border-[var(--border)] bg-[var(--bg-surface)] text-xs cursor-pointer focus:outline-none"
-                title="Pick specific week from calendar"
-              />
-
+              {/* Next Week */}
               <button
                 type="button"
                 onClick={handleNextWeek}
                 disabled={isCurrentWeek}
-                className="p-1 rounded-lg text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-surface)] disabled:opacity-30 transition-colors"
-                title="Next Week"
+                className="p-1 rounded-lg text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-surface)] disabled:opacity-30 transition-colors cursor-pointer"
+                title="Next Week (+1 Week)"
               >
                 <ChevronRight className="h-4 w-4" />
+              </button>
+
+              {/* Next Month */}
+              <button
+                type="button"
+                onClick={handleNextMonth}
+                disabled={isCurrentWeek}
+                className="px-2 py-1 rounded-lg text-[11px] font-bold text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-surface)] disabled:opacity-30 transition-colors cursor-pointer"
+                title="Next Month (+4 Weeks)"
+              >
+                Month »
               </button>
             </div>
 
@@ -206,6 +246,14 @@ export function AdminReportingMatrix({ adminUid, staffList }: Props) {
               <button
                 type="button"
                 onClick={handleResetToCurrentWeek}
+                className="inline-flex items-center gap-1 px-3 py-1.5 rounded-xl border border-[var(--border)] bg-[var(--bg-surface)] text-xs font-bold text-blue-600 dark:text-blue-400 hover:bg-[var(--bg-muted)] transition-colors cursor-pointer"
+                title="Jump to Present Day / Current Week"
+              >
+                <RotateCcw className="h-3.5 w-3.5" />
+                Current Week
+              </button>
+            )}
+          </div>
                 className="inline-flex items-center gap-1 px-3 py-1.5 rounded-xl border border-[var(--border)] bg-[var(--bg-surface)] text-xs font-semibold text-blue-600 dark:text-blue-400 hover:bg-[var(--bg-muted)] transition-colors"
                 title="Jump to Current Week"
               >
@@ -288,8 +336,107 @@ export function AdminReportingMatrix({ adminUid, staffList }: Props) {
         ) : filteredStaff.length === 0 ? (
           <p className="p-8 text-center text-xs text-[var(--text-muted)]">No staff members match the selected filters.</p>
         ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-left text-xs border-collapse">
+          <>
+            {/* Mobile Cards View */}
+            <div className="block md:hidden divide-y divide-[var(--border)]">
+              {filteredStaff.map((staff) => {
+                const targetUid = staff.uid || staff.id;
+                const matchingReport = reports.find(
+                  (r) => r.userId === targetUid || r.userId === staff.email
+                );
+                const status = matchingReport?.status || "OVERDUE";
+                const userInitial = (staff.name[0] || "S").toUpperCase();
+
+                return (
+                  <div key={staff.id} className="p-4 space-y-3">
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="flex items-center gap-2.5 min-w-0">
+                        <div className="w-8 h-8 rounded-full bg-blue-600 text-white font-bold text-xs flex items-center justify-center shrink-0 shadow-xs">
+                          {userInitial}
+                        </div>
+                        <div className="min-w-0">
+                          <h4 className="font-bold text-xs sm:text-sm text-[var(--text-primary)] truncate">
+                            {staff.name}
+                          </h4>
+                          <p className="text-[10px] text-[var(--text-muted)] truncate">
+                            {staff.email}
+                          </p>
+                        </div>
+                      </div>
+
+                      <span
+                        className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold shrink-0 ${
+                          status === "SUBMITTED"
+                            ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20"
+                            : status === "LATE_UNLOCKED"
+                            ? "bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20"
+                            : status === "DRAFT"
+                            ? "bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20"
+                            : "bg-rose-500/10 text-rose-600 dark:text-rose-400 border border-rose-500/20"
+                        }`}
+                      >
+                        {status === "SUBMITTED" ? (
+                          <CheckCircle2 className="h-3 w-3" />
+                        ) : status === "LATE_UNLOCKED" ? (
+                          <Unlock className="h-3 w-3" />
+                        ) : status === "DRAFT" ? (
+                          <Clock className="h-3 w-3" />
+                        ) : (
+                          <Lock className="h-3 w-3" />
+                        )}
+                        {status}
+                      </span>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-2 text-xs">
+                      <div className="rounded-lg bg-[var(--bg-muted)]/50 p-2">
+                        <span className="text-[9px] uppercase font-bold text-[var(--text-muted)] block">
+                          Department
+                        </span>
+                        <span className="font-semibold text-[11px] text-[var(--text-primary)] truncate block">
+                          {staff.department || "General"}
+                        </span>
+                      </div>
+                      <div className="rounded-lg bg-[var(--bg-muted)]/50 p-2">
+                        <span className="text-[9px] uppercase font-bold text-[var(--text-muted)] block">
+                          Branch
+                        </span>
+                        <span className="font-semibold text-[11px] text-[var(--text-primary)] truncate block">
+                          {staff.branch || "Headquarters"}
+                        </span>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-2 pt-1">
+                      <button
+                        type="button"
+                        onClick={() => setInspectStaff(staff)}
+                        className="flex-1 inline-flex items-center justify-center gap-1.5 rounded-xl border border-[var(--border)] bg-[var(--bg-surface)] py-2 text-xs font-semibold text-[var(--text-primary)] hover:bg-[var(--bg-muted)]"
+                      >
+                        <Eye className="h-3.5 w-3.5 text-blue-500" />
+                        Inspect Reports
+                      </button>
+
+                      {status !== "SUBMITTED" && (
+                        <button
+                          type="button"
+                          onClick={() => handleGrantUnlock(staff)}
+                          disabled={grantingUid === targetUid}
+                          className="flex-1 inline-flex items-center justify-center gap-1.5 rounded-xl bg-amber-600 py-2 text-xs font-semibold text-white hover:bg-amber-700 disabled:opacity-50"
+                        >
+                          <Unlock className="h-3.5 w-3.5" />
+                          {grantingUid === targetUid ? "Unlocking..." : "Grant Unlock"}
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* Desktop Table View */}
+            <div className="hidden md:block overflow-x-auto">
+              <table className="w-full text-left text-xs border-collapse">
               <thead>
                 <tr className="border-b border-[var(--border)] bg-[var(--bg-muted)]/20 text-[var(--text-muted)] uppercase tracking-wider text-[11px] font-bold">
                   <th className="px-4 py-3">Staff Name</th>
@@ -377,6 +524,7 @@ export function AdminReportingMatrix({ adminUid, staffList }: Props) {
               </tbody>
             </table>
           </div>
+          </>
         )}
       </div>
 
