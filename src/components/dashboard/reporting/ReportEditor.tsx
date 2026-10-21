@@ -148,13 +148,14 @@ export function ReportEditor({ userId, userName, userEmail, isAdmin }: Props) {
     setSaving(true);
     setMessage(null);
     try {
-      const reportId = `${userId}_${weekDetails.year}_W${String(weekDetails.weekNumber).padStart(2, "0")}`;
+      const reportId = getReportDocId(userId, weekDetails.year, weekDetails.weekNumber, activeCategory);
       const totals = calculateAllTotals();
 
       await saveWeeklyReportDraft({
         id: reportId,
         userId,
         userName,
+        reportCategory: activeCategory,
         year: weekDetails.year,
         month: weekDetails.month,
         weekNumber: weekDetails.weekNumber,
@@ -166,7 +167,7 @@ export function ReportEditor({ userId, userName, userEmail, isAdmin }: Props) {
         totals,
       });
 
-      setMessage({ type: "success", text: "Draft saved successfully!" });
+      setMessage({ type: "success", text: `Draft for ${activeCategory} saved successfully!` });
     } catch (err) {
       setMessage({
         type: "error",
@@ -178,13 +179,13 @@ export function ReportEditor({ userId, userName, userEmail, isAdmin }: Props) {
   };
 
   const handleSubmit = async () => {
-    if (!window.confirm("Submit weekly report? Once submitted, headers and entries will be frozen for history.")) {
+    if (!window.confirm(`Submit ${activeCategory} report for Week ${weekDetails.weekNumber}? Once submitted, headers and entries will be frozen for history.`)) {
       return;
     }
     setSubmitting(true);
     setMessage(null);
     try {
-      const reportId = `${userId}_${weekDetails.year}_W${String(weekDetails.weekNumber).padStart(2, "0")}`;
+      const reportId = getReportDocId(userId, weekDetails.year, weekDetails.weekNumber, activeCategory);
       const totals = calculateAllTotals();
 
       // First ensure document exists
@@ -192,6 +193,7 @@ export function ReportEditor({ userId, userName, userEmail, isAdmin }: Props) {
         id: reportId,
         userId,
         userName,
+        reportCategory: activeCategory,
         year: weekDetails.year,
         month: weekDetails.month,
         weekNumber: weekDetails.weekNumber,
@@ -209,6 +211,7 @@ export function ReportEditor({ userId, userName, userEmail, isAdmin }: Props) {
       setReport((prev) => ({
         ...prev!,
         id: reportId,
+        reportCategory: activeCategory,
         status: "SUBMITTED",
         submittedAt: new Date(),
         snapshotTemplate: template,
@@ -218,7 +221,7 @@ export function ReportEditor({ userId, userName, userEmail, isAdmin }: Props) {
 
       setMessage({
         type: "success",
-        text: "Weekly report submitted and frozen successfully! Previous reports are now archived in history.",
+        text: `${activeCategory} report submitted and frozen successfully!`,
       });
     } catch (err) {
       setMessage({
@@ -294,6 +297,74 @@ export function ReportEditor({ userId, userName, userEmail, isAdmin }: Props) {
                 {submitting ? "Submitting..." : "Submit Report"}
               </button>
             </>
+          )}
+        </div>
+      </div>
+
+      {/* Category Selection Bar (Multiple Reports per Week) */}
+      <div className="rounded-2xl border border-[var(--border)] bg-[var(--bg-surface)] p-3 shadow-xs flex items-center justify-between gap-3 flex-wrap">
+        <div className="flex items-center gap-2 flex-wrap">
+          <span className="text-xs font-bold text-[var(--text-muted)] uppercase tracking-wider px-2">
+            Report Category:
+          </span>
+          {categories.map((cat) => (
+            <button
+              key={cat}
+              type="button"
+              onClick={() => setActiveCategory(cat)}
+              className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all ${
+                activeCategory === cat
+                  ? "bg-blue-600 text-white shadow-sm"
+                  : "bg-[var(--bg-muted)]/60 text-[var(--text-muted)] hover:text-[var(--text-primary)]"
+              }`}
+            >
+              {cat}
+            </button>
+          ))}
+
+          {!showAddCategory ? (
+            <button
+              type="button"
+              onClick={() => setShowAddCategory(true)}
+              className="px-3 py-1.5 rounded-xl border border-dashed border-[var(--border)] text-xs font-semibold text-blue-600 dark:text-blue-400 hover:bg-blue-500/5 transition-colors"
+            >
+              + Add Category
+            </button>
+          ) : (
+            <div className="flex items-center gap-1.5">
+              <input
+                type="text"
+                placeholder="Category Name (e.g. Visas)"
+                value={newCategoryInput}
+                onChange={(e) => setNewCategoryInput(e.target.value)}
+                className="rounded-lg border border-[var(--border)] bg-[var(--bg-surface)] px-2.5 py-1 text-xs font-medium focus:outline-none"
+              />
+              <button
+                type="button"
+                onClick={() => {
+                  if (newCategoryInput.trim()) {
+                    const newCat = newCategoryInput.trim();
+                    if (!categories.includes(newCat)) {
+                      setCategories((prev) => [...prev, newCat]);
+                    }
+                    setActiveCategory(newCat);
+                    setNewCategoryInput("");
+                    setShowAddCategory(false);
+                  }
+                }}
+                disabled={!newCategoryInput.trim()}
+                className="px-2.5 py-1 rounded bg-blue-600 text-white text-xs font-semibold disabled:opacity-50"
+              >
+                Add
+              </button>
+              <button
+                type="button"
+                onClick={() => setShowAddCategory(false)}
+                className="px-2 py-1 text-xs text-[var(--text-muted)]"
+              >
+                Cancel
+              </button>
+            </div>
           )}
         </div>
       </div>
