@@ -387,20 +387,85 @@ export function ReportEditor({ userId, userName, userEmail, isAdmin }: Props) {
         </div>
       )}
 
-      {/* Main Report Table Grid Editor */}
+      {/* Main Report Table Grid Editor / First-Time Onboarding Guide */}
       {loading ? (
         <div className="rounded-2xl border border-[var(--border)] bg-[var(--bg-surface)] p-8 text-center text-sm text-[var(--text-muted)]">
           Loading report template and saved values...
         </div>
       ) : template.length === 0 ? (
-        <div className="rounded-2xl border border-[var(--border)] bg-[var(--bg-surface)] p-8 text-center space-y-3">
-          <p className="text-sm font-semibold text-[var(--text-primary)]">No report sections configured.</p>
-          <button
-            onClick={() => setShowCustomizer(true)}
-            className="inline-flex items-center gap-1.5 rounded-xl bg-blue-600 px-4 py-2 text-xs font-semibold text-white"
-          >
-            <Plus className="h-4 w-4" /> Add First Section
-          </button>
+        <div className="rounded-2xl border border-[var(--border)] bg-[var(--bg-surface)] p-6 sm:p-8 space-y-6 shadow-sm">
+          {/* Welcome Header */}
+          <div className="rounded-2xl bg-gradient-to-br from-navy-900 to-blue-950 p-6 text-white space-y-3">
+            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-blue-500/20 text-sky-300 font-bold text-xs uppercase tracking-wider">
+              <Columns className="h-3.5 w-3.5" />
+              First-Time Setup Required
+            </span>
+            <h3 className="text-xl font-bold sm:text-2xl">
+              Welcome to Your Staff Reporting System
+            </h3>
+            <p className="text-xs sm:text-sm leading-6 text-slate-200 max-w-2xl">
+              No report sections have been configured for your account yet. You can build custom reporting templates tailored to your department and role, submit multiple category reports, and run week-over-week performance comparisons.
+            </p>
+          </div>
+
+          {/* Educational Cards Grid */}
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            <div className="rounded-xl border border-[var(--border)] bg-[var(--bg-primary)] p-4 space-y-2">
+              <div className="flex h-7 w-7 items-center justify-center rounded-full bg-blue-500/10 text-xs font-bold text-blue-600">
+                1
+              </div>
+              <h4 className="text-xs font-bold text-[var(--text-primary)]">Custom Headers & Items</h4>
+              <p className="text-[11px] text-[var(--text-muted)] leading-5">
+                Define section titles, multi-column headers, and pre-filled row items (e.g. SI-UK, Edvoy, or partners) so your weekly report is pre-loaded for easy entry.
+              </p>
+            </div>
+
+            <div className="rounded-xl border border-[var(--border)] bg-[var(--bg-primary)] p-4 space-y-2">
+              <div className="flex h-7 w-7 items-center justify-center rounded-full bg-blue-500/10 text-xs font-bold text-blue-600">
+                2
+              </div>
+              <h4 className="text-xs font-bold text-[var(--text-primary)]">Multiple Reports per Week</h4>
+              <p className="text-[11px] text-[var(--text-muted)] leading-5">
+                Create separate report categories (e.g. B2C Direct, B2B Partnerships, Visas) to manage and submit distinct reports simultaneously in the same week.
+              </p>
+            </div>
+
+            <div className="rounded-xl border border-[var(--border)] bg-[var(--bg-primary)] p-4 space-y-2">
+              <div className="flex h-7 w-7 items-center justify-center rounded-full bg-blue-500/10 text-xs font-bold text-blue-600">
+                3
+              </div>
+              <h4 className="text-xs font-bold text-[var(--text-primary)]">Side-by-Side 4-Week Comparison</h4>
+              <p className="text-[11px] text-[var(--text-muted)] leading-5">
+                Compare up to 4 past weeks side-by-side with automatic live column totals, weekly averages, and percentage deltas (+/- %).
+              </p>
+            </div>
+
+            <div className="rounded-xl border border-[var(--border)] bg-[var(--bg-primary)] p-4 space-y-2">
+              <div className="flex h-7 w-7 items-center justify-center rounded-full bg-blue-500/10 text-xs font-bold text-blue-600">
+                4
+              </div>
+              <h4 className="text-xs font-bold text-[var(--text-primary)]">Monthly Summary Packages</h4>
+              <p className="text-[11px] text-[var(--text-muted)] leading-5">
+                Weekly reports aggregate automatically into end-of-month summary packages for month-vs-month comparative analysis (e.g. August vs October).
+              </p>
+            </div>
+          </div>
+
+          {/* Action Callout */}
+          <div className="rounded-xl border border-blue-500/20 bg-blue-500/5 p-4 flex flex-col sm:flex-row items-center justify-between gap-4">
+            <div className="space-y-1">
+              <h4 className="text-xs font-bold text-[var(--text-primary)]">Ready to design your template?</h4>
+              <p className="text-[11px] text-[var(--text-muted)]">
+                Click below to add your custom section headers, table columns, and default row items.
+              </p>
+            </div>
+            <button
+              onClick={() => setShowCustomizer(true)}
+              className="inline-flex items-center gap-1.5 rounded-xl bg-blue-600 px-5 py-2.5 text-xs font-bold text-white hover:bg-blue-700 shadow-sm shrink-0"
+            >
+              <Plus className="h-4 w-4" /> Set Up My Reporting Template
+            </button>
+          </div>
         </div>
       ) : (
         <div className="space-y-6">
