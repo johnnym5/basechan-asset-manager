@@ -1,5 +1,4 @@
-"use client";
-
+import dynamic from "next/dynamic";
 import React, { useState, useEffect, useMemo } from "react";
 import Image from "next/image";
 import { AnimatePresence, motion, Variants } from "framer-motion";
@@ -7,15 +6,72 @@ import { useAuth } from "@/context/AuthContext";
 import { Navbar } from "@/components/layout/Navbar";
 import { Sidebar, TabKey } from "@/components/layout/Sidebar";
 import { AnimatedBackground } from "@/components/ui/AnimatedBackground";
-import { OverviewTab } from "@/components/dashboard/OverviewTab";
-import { HardwareTab } from "@/components/dashboard/HardwareTab";
-import { MissingDetailsTab } from "@/components/dashboard/MissingDetailsTab";
-import { CredentialsTab } from "@/components/dashboard/CredentialsTab";
-import { WorkbooksTab } from "@/components/dashboard/WorkbooksTab";
-import { FacilitiesTab } from "@/components/dashboard/FacilitiesTab";
-import { StaffDirectoryTab } from "@/components/dashboard/StaffDirectoryTab";
-import { IngestionTab } from "@/components/dashboard/IngestionTab";
 import { AuthLoadingScreen, DashboardSkeleton } from "@/components/ui/LoadingStates";
+
+const OverviewTab = dynamic(() => import("@/components/dashboard/OverviewTab").then((m) => m.OverviewTab), {
+  loading: () => <DashboardSkeleton />,
+  ssr: false,
+});
+
+const HardwareTab = dynamic(() => import("@/components/dashboard/HardwareTab").then((m) => m.HardwareTab), {
+  loading: () => <DashboardSkeleton />,
+  ssr: false,
+});
+
+const MissingDetailsTab = dynamic(() => import("@/components/dashboard/MissingDetailsTab").then((m) => m.MissingDetailsTab), {
+  loading: () => <DashboardSkeleton />,
+  ssr: false,
+});
+
+const CredentialsTab = dynamic(() => import("@/components/dashboard/CredentialsTab").then((m) => m.CredentialsTab), {
+  loading: () => <DashboardSkeleton />,
+  ssr: false,
+});
+
+const WorkbooksTab = dynamic(() => import("@/components/dashboard/WorkbooksTab").then((m) => m.WorkbooksTab), {
+  loading: () => <DashboardSkeleton />,
+  ssr: false,
+});
+
+const FacilitiesTab = dynamic(() => import("@/components/dashboard/FacilitiesTab").then((m) => m.FacilitiesTab), {
+  loading: () => <DashboardSkeleton />,
+  ssr: false,
+});
+
+const StaffDirectoryTab = dynamic(() => import("@/components/dashboard/StaffDirectoryTab").then((m) => m.StaffDirectoryTab), {
+  loading: () => <DashboardSkeleton />,
+  ssr: false,
+});
+
+const IngestionTab = dynamic(() => import("@/components/dashboard/IngestionTab").then((m) => m.IngestionTab), {
+  loading: () => <DashboardSkeleton />,
+  ssr: false,
+});
+
+const StocktakeTab = dynamic(() => import("@/components/dashboard/StocktakeTab").then((m) => m.StocktakeTab), {
+  loading: () => <DashboardSkeleton />,
+  ssr: false,
+});
+
+const TaskInboxTab = dynamic(() => import("@/components/dashboard/TaskInboxTab").then((m) => m.TaskInboxTab), {
+  loading: () => <DashboardSkeleton />,
+  ssr: false,
+});
+
+const WorkspaceTab = dynamic(() => import("@/components/dashboard/WorkspaceTab").then((m) => m.WorkspaceTab), {
+  loading: () => <DashboardSkeleton />,
+  ssr: false,
+});
+
+const ReportingTab = dynamic(() => import("@/components/dashboard/ReportingTab").then((m) => m.ReportingTab), {
+  loading: () => <DashboardSkeleton />,
+  ssr: false,
+});
+
+const PersonalHomeTab = dynamic(() => import("@/components/dashboard/PersonalHomeTab").then((m) => m.PersonalHomeTab), {
+  loading: () => <DashboardSkeleton />,
+  ssr: false,
+});
 
 import { PhysicalAsset, StaffMember, DigitalCredential, WorkbookDocument, FacilityItem, WorkspaceLink } from "@/types/assets";
 import { auditAllAssets } from "@/lib/completenessAuditor";
@@ -26,10 +82,6 @@ import { collection, getDocs, getDoc, doc, updateDoc, writeBatch, serverTimestam
 import { ShieldAlert, LogIn } from "lucide-react";
 import { addDoc, runTransaction, Timestamp } from "firebase/firestore";
 import { deleteField as firestoreDeleteField } from "firebase/firestore";
-import { StocktakeTab } from "@/components/dashboard/StocktakeTab";
-import { TaskInboxTab } from "@/components/dashboard/TaskInboxTab";
-import { WorkspaceTab } from "@/components/dashboard/WorkspaceTab";
-import { ReportingTab } from "@/components/dashboard/ReportingTab";
 import { InboxTask, StocktakeItem, StocktakeRound } from "@/types/assets";
 import { listPendingAssetUpdates, queueAssetUpdate, flushAssetUpdates, retryAssetUpdate, cacheAssignedAssets, readCachedAssignedAssets, PendingAssetUpdate, listPendingRepairRequests, queueRepairRequest, flushRepairRequests, retryRepairRequest, PendingRepairRequest } from "@/lib/offlineAssetQueue";
 
@@ -43,7 +95,6 @@ import { AccessGrantModal } from "@/components/modals/AccessGrantModal";
 import { RecordEditorModal, RecordField } from "@/components/modals/RecordEditorModal";
 import { buildActivityLog } from "@/lib/activityLog";
 import { accessiblePages } from "@/lib/accessControl";
-import { PersonalHomeTab } from "@/components/dashboard/PersonalHomeTab";
 import { OnboardingGuide } from "@/components/ui/OnboardingGuide";
 
 const TAB_ORDER: TabKey[] = [
