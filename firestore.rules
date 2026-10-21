@@ -225,7 +225,7 @@ service cloud.firestore {
     match /lateUnlockRequests/{requestId} {
       allow read: if isAdmin() || (isStaff() && (
         resource.data.get('userId', '') == request.auth.uid ||
-        requestId.startsWith(request.auth.uid + '_')
+        requestId.matches('^' + request.auth.uid + '_.*')
       ));
       allow create, update, delete: if isAdmin();
     }
