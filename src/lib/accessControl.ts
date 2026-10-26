@@ -89,7 +89,7 @@ export function accessiblePages(
     stocktake: hasAssignedStocktake,
     tasks: true,
     workspace: true,
-    reporting: true,
+    reporting: canRead("reporting"),
   };
 }
 

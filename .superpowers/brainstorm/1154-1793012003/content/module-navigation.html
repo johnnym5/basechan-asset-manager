@@ -1,0 +1,61 @@
+<h2>How should all modules fit into the BCAM-style app?</h2>
+<p class="subtitle">All three directions use BCAM’s navy, gold, compact navigation, and calm card layout. Choose the navigation structure that feels clearest for staff.</p>
+
+<div class="cards" style="grid-template-columns:repeat(auto-fit,minmax(300px,1fr));align-items:start;">
+  <div class="card" data-choice="single-list" onclick="toggleSelect(this)">
+    <div class="card-image" style="padding:12px;background:#edf2f7;">
+      <div style="display:flex;height:260px;overflow:hidden;border:1px solid #d5dee8;border-radius:12px;background:#f8fafc;box-shadow:0 8px 20px #0c1d2f18;font:11px Arial,sans-serif;color:#0f172a;">
+        <div style="width:94px;flex:none;background:#0c1d2f;color:#dbe4ee;padding:12px 8px;box-sizing:border-box;">
+          <div style="font-size:11px;font-weight:700;color:#e1bf54;margin:0 0 14px 4px;">BASECHAN</div>
+          <div style="padding:6px 7px;border-radius:6px;background:#18334d;color:#e1bf54;margin-bottom:4px;">◈ Overview</div>
+          <div style="padding:6px 7px;">◷ Attendance</div><div style="padding:6px 7px;">☷ Tasks</div><div style="padding:6px 7px;">♙ Staff</div>
+          <div style="height:1px;background:#29435c;margin:6px 3px;"></div>
+          <div style="padding:6px 7px;">▣ Hardware</div><div style="padding:6px 7px;">⌑ Credentials</div><div style="padding:6px 7px;">▤ Workbooks</div><div style="padding:6px 7px;">⌂ Facilities</div><div style="padding:6px 7px;">▧ Stocktake</div>
+        </div>
+        <div style="flex:1;padding:15px;min-width:0;">
+          <div style="font-size:9px;color:#64748b;">MONDAY, 26 OCTOBER</div><div style="font-size:17px;font-weight:700;margin:6px 0 12px;">Good morning, Peter</div>
+          <div style="display:flex;gap:6px;margin-bottom:11px;"><div style="flex:1;background:#fff;border:1px solid #e2e8f0;border-radius:7px;padding:8px;"><b>12</b><div style="color:#64748b;margin-top:3px;">Open tasks</div></div><div style="flex:1;background:#fff;border:1px solid #e2e8f0;border-radius:7px;padding:8px;"><b>3</b><div style="color:#64748b;margin-top:3px;">Assets assigned</div></div></div>
+          <div style="background:#fff;border:1px solid #e2e8f0;border-radius:8px;padding:10px;"><b style="font-size:10px;">Today at a glance</b><div style="height:7px;background:#f1f5f9;border-radius:4px;margin-top:9px;width:86%;"></div><div style="height:7px;background:#f1f5f9;border-radius:4px;margin-top:6px;width:66%;"></div><div style="height:7px;background:#f1f5f9;border-radius:4px;margin-top:6px;width:75%;"></div></div>
+        </div>
+      </div>
+    </div>
+    <div class="card-body"><h3>One simple list</h3><p>Every module stays visible in one BCAM-style sidebar. Easy to scan, but the list grows as Team and asset features come together.</p></div>
+  </div>
+
+  <div class="card" data-choice="grouped" onclick="toggleSelect(this)">
+    <div class="card-image" style="padding:12px;background:#edf2f7;">
+      <div style="display:flex;height:260px;overflow:hidden;border:1px solid #d5dee8;border-radius:12px;background:#f8fafc;box-shadow:0 8px 20px #0c1d2f18;font:11px Arial,sans-serif;color:#0f172a;">
+        <div style="width:104px;flex:none;background:#0c1d2f;color:#dbe4ee;padding:12px 8px;box-sizing:border-box;">
+          <div style="font-size:11px;font-weight:700;color:#e1bf54;margin:0 0 14px 4px;">BASECHAN</div>
+          <div style="padding:6px 7px;border-radius:6px;background:#18334d;color:#e1bf54;margin-bottom:8px;">◈ Overview</div>
+          <div style="font-size:8px;letter-spacing:1px;color:#8da1b4;padding:3px 6px;">PEOPLE & WORK</div><div style="padding:5px 7px;">◷ Attendance</div><div style="padding:5px 7px;">☷ Tasks</div><div style="padding:5px 7px;">♙ Staff</div><div style="padding:5px 7px;">▱ Reports</div>
+          <div style="font-size:8px;letter-spacing:1px;color:#8da1b4;padding:8px 6px 3px;">ASSETS</div><div style="padding:5px 7px;">▣ Hardware</div><div style="padding:5px 7px;">⌑ Credentials</div><div style="padding:5px 7px;">▤ Workbooks</div><div style="padding:5px 7px;">⌂ Facilities</div><div style="padding:5px 7px;">▧ Stocktake</div>
+        </div>
+        <div style="flex:1;padding:15px;min-width:0;">
+          <div style="font-size:9px;color:#64748b;">OVERVIEW</div><div style="font-size:17px;font-weight:700;margin:6px 0 12px;">Your work, in one place</div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:7px;margin-bottom:9px;"><div style="background:#fff;border:1px solid #e2e8f0;border-radius:7px;padding:9px;"><b>Attendance</b><div style="color:#64748b;margin-top:5px;">Clock in and view your week</div></div><div style="background:#fff;border:1px solid #e2e8f0;border-radius:7px;padding:9px;"><b>My assets</b><div style="color:#64748b;margin-top:5px;">3 items assigned to you</div></div><div style="background:#fff;border:1px solid #e2e8f0;border-radius:7px;padding:9px;"><b>Tasks</b><div style="color:#64748b;margin-top:5px;">12 need attention</div></div><div style="background:#fff;border:1px solid #e2e8f0;border-radius:7px;padding:9px;"><b>Team updates</b><div style="color:#64748b;margin-top:5px;">Latest reports and notices</div></div></div>
+          <div style="background:#fff;border:1px solid #e2e8f0;border-left:3px solid #e1bf54;border-radius:7px;padding:9px;color:#334155;">Grouped sections keep the full module set easy to find.</div>
+        </div>
+      </div>
+    </div>
+    <div class="card-body"><h3>Grouped sections</h3><p>Keep related Team and asset modules together. Staff can find the full set without one long, unstructured menu.</p></div>
+  </div>
+
+  <div class="card" data-choice="compact" onclick="toggleSelect(this)">
+    <div class="card-image" style="padding:12px;background:#edf2f7;">
+      <div style="display:flex;height:260px;overflow:hidden;border:1px solid #d5dee8;border-radius:12px;background:#f8fafc;box-shadow:0 8px 20px #0c1d2f18;font:11px Arial,sans-serif;color:#0f172a;">
+        <div style="width:48px;flex:none;background:#0c1d2f;color:#dbe4ee;padding:12px 6px;box-sizing:border-box;text-align:center;">
+          <div style="font-size:10px;font-weight:700;color:#e1bf54;margin:0 0 16px;">B</div><div style="padding:7px 0;border-radius:6px;background:#18334d;color:#e1bf54;margin-bottom:6px;">◈</div><div style="padding:7px 0;">◷</div><div style="padding:7px 0;">☷</div><div style="padding:7px 0;">♙</div><div style="padding:7px 0;">▣</div><div style="padding:7px 0;">⌂</div><div style="position:absolute;transform:translateY(40px);left:24px;width:140px;text-align:left;background:#112a40;border:1px solid #34506a;border-radius:7px;padding:8px;color:#e1bf54;box-shadow:0 6px 15px #0003;">All modules&nbsp; ›</div>
+        </div>
+        <div style="flex:1;padding:15px;min-width:0;">
+          <div style="display:flex;justify-content:space-between;align-items:center;"><span style="font-size:9px;color:#64748b;">MY DASHBOARD</span><span style="background:#e1bf54;color:#0c1d2f;padding:5px 8px;border-radius:6px;font-weight:700;font-size:9px;">＋ Quick action</span></div><div style="font-size:17px;font-weight:700;margin:7px 0 12px;">Good morning, Peter</div>
+          <div style="background:#fff;border:1px solid #e2e8f0;border-radius:8px;padding:10px;margin-bottom:8px;"><b>My assigned assets</b><div style="display:flex;gap:6px;margin-top:8px;"><div style="flex:1;background:#f1f5f9;border-radius:6px;padding:9px;">Laptop<br><span style="color:#64748b;font-size:9px;">BC-014 · Active</span></div><div style="flex:1;background:#f1f5f9;border-radius:6px;padding:9px;">Phone<br><span style="color:#64748b;font-size:9px;">BC-028 · Active</span></div></div></div>
+          <div style="background:#fff;border:1px solid #e2e8f0;border-radius:8px;padding:10px;"><b>Next up</b><div style="color:#64748b;margin-top:7px;">Clock in&nbsp; · &nbsp;Review 2 tasks&nbsp; · &nbsp;Read team update</div></div>
+        </div>
+      </div>
+    </div>
+    <div class="card-body"><h3>Compact rail + module picker</h3><p>Keep the screen very open and show key destinations as icons. The rest of the modules sit in an expandable picker.</p></div>
+  </div>
+</div>
+
+<p class="subtitle" style="margin-top:16px;">Click one option to select it. You can also tell me what you’d change.</p>

@@ -1,10 +1,81 @@
 import {
   MonthlyPackage,
+  ApplicationCountValidation,
   ReportColumnDef,
   ReportComparisonResult,
   ReportSectionDef,
+  ReportMetricDef,
   WeeklyReport,
 } from "@/types/reporting";
+
+const APPLICATION_CHANNELS = ["B2B", "B2C", "SUBAGENTS"] as const;
+const OFFER_STATUSES = ["conditional_offers", "unconditional_offers", "awaiting_offers"] as const;
+
+export function validateApplicationCounts(values: Record<string, number | null | undefined>, metrics?: ReportMetricDef[]): ApplicationCountValidation {
+  const errors: string[] = [];
+  const activeIds = metrics ? new Set(metrics.map((metric) => metric.id)) : null;
+  const isActive = (key: string) => !activeIds || activeIds.has(key);
+  const checked = new Set<string>();
+  const count = (key: string) => {
+    if (!isActive(key)) return 0;
+    const value = values[key];
+    if (typeof value !== "number" || !Number.isInteger(value) || value < 0 || !Number.isFinite(value)) {
+      if (!checked.has(key)) errors.push(`${key} must be a non-negative whole number.`);
+      checked.add(key);
+      return 0;
+    }
+    checked.add(key);
+    return value;
+  };
+  metrics?.filter((metric) => metric.group && metric.group !== "PIPELINE").forEach((metric) => count(metric.id));
+
+  const totalEquationKeys = ["total_applications", "applications_b2b", "applications_b2c", "applications_subagents"];
+  const totalEquationEnabled = totalEquationKeys.every(isActive);
+  const total = totalEquationEnabled ? count("total_applications") : 0;
+  const channelTotals = Object.fromEntries(APPLICATION_CHANNELS.map((channel) => {
+    const suffix = channel.toLowerCase();
+    const applicationsKey = `applications_${suffix}`;
+    const offerKeys = OFFER_STATUSES.map((status) => `${status}_${suffix}`);
+    const equationEnabled = [applicationsKey, ...offerKeys].every(isActive);
+    const applications = equationEnabled ? count(applicationsKey) : 0;
+    const offers = equationEnabled ? offerKeys.reduce((sum, key) => sum + count(key), 0) : 0;
+    if (equationEnabled && offers !== applications) errors.push(`${channel} offer statuses total ${offers}; applications total ${applications}.`);
+    return [channel, { applications, offers }];
+  })) as ApplicationCountValidation["channelTotals"];
+
+  const expectedTotal = APPLICATION_CHANNELS.reduce((sum, channel) => sum + channelTotals[channel].applications, 0);
+  if (totalEquationEnabled && expectedTotal !== total) errors.push(`Channel applications total ${expectedTotal}; total applications is ${total}.`);
+  return { valid: errors.length === 0, errors, expectedTotal, channelTotals };
+}
+
+export interface AlignedMetricReport {
+  reportId: string;
+  weekLabel: string;
+  values: Record<string, number | null>;
+}
+
+export function alignWeeklyReportMetrics(reports: WeeklyReport[]): { metrics: ReportMetricDef[]; reports: AlignedMetricReport[] } {
+  const metricMap = new Map<string, ReportMetricDef>();
+  reports.forEach((report) => (report.selectedTemplates || []).forEach((selected) => selected.metrics.forEach((metric) => {
+    const metricKey = `${selected.templateId}::${metric.id}`;
+    if (!metricMap.has(metricKey)) metricMap.set(metricKey, { ...metric, id: metricKey, label: `${selected.templateSnapshot.name}: ${metric.label}` });
+  })));
+
+  return {
+    metrics: Array.from(metricMap.values()),
+    reports: reports.map((report) => {
+      const values: Record<string, number | null> = {};
+      (report.selectedTemplates || []).forEach((selected) => selected.metrics.forEach((metric) => {
+        values[`${selected.templateId}::${metric.id}`] = selected.values[metric.id] ?? null;
+      }));
+      return {
+        reportId: report.id,
+        weekLabel: `Week ${report.weekNumber}${report.year ? ` · ${report.year}` : ""}`,
+        values,
+      };
+    }),
+  };
+}
 
 /**
  * Calculates the ISO week details for a given Date object.
@@ -175,7 +246,7 @@ export function compareWeeklyReports(reports: WeeklyReport[]): ReportComparisonR
       reportId: string;
       weekLabel: string;
       rows: Array<Record<string, any>>;
-      totals: Record<string, number>;
+      totals: Record<string, number | null>;
     }> = [];
 
     const columnSumTotals: Record<string, number> = {};
@@ -183,10 +254,19 @@ export function compareWeeklyReports(reports: WeeklyReport[]): ReportComparisonR
 
     sortedReports.forEach((rpt) => {
       const secRows = rpt.data?.[sectionId] || [];
-      const secTotals = rpt.totals?.[sectionId] || calculateSectionTotals(secRows, columns);
+      const reportSection = (rpt.snapshotTemplate || []).find((sec) => sec.id === sectionId);
+      const reportColumns = reportSection?.columns || [];
+      const rawTotals = rpt.totals?.[sectionId] || calculateSectionTotals(secRows, reportColumns);
+      const secTotals: Record<string, number | null> = {};
 
       columns.forEach((c) => {
-        columnSumTotals[c.key] += secTotals[c.key] || 0;
+        if (!reportSection || !reportColumns.some((reportColumn) => reportColumn.key === c.key)) {
+          secTotals[c.key] = null;
+          return;
+        }
+        const value = rawTotals[c.key] ?? 0;
+        secTotals[c.key] = value;
+        columnSumTotals[c.key] += value;
       });
 
       reportsData.push({
@@ -197,7 +277,6 @@ export function compareWeeklyReports(reports: WeeklyReport[]): ReportComparisonR
       });
     });
 
-    const reportCount = sortedReports.length;
     const columnAverages: Record<string, number> = {};
     const columnDeltas: Record<string, number | "NEW"> = {};
 
@@ -205,11 +284,12 @@ export function compareWeeklyReports(reports: WeeklyReport[]): ReportComparisonR
     const newestReportTotals = reportsData[reportsData.length - 1]?.totals || {};
 
     columns.forEach((c) => {
-      const avg = reportCount > 0 ? columnSumTotals[c.key] / reportCount : 0;
+      const reportsWithMetric = reportsData.filter((reportData) => reportData.totals[c.key] !== null && reportData.totals[c.key] !== undefined).length;
+      const avg = reportsWithMetric > 0 ? columnSumTotals[c.key] / reportsWithMetric : 0;
       columnAverages[c.key] = Math.round(avg * 100) / 100;
 
-      const oldestVal = oldestReportTotals[c.key] || 0;
-      const newestVal = newestReportTotals[c.key] || 0;
+      const oldestVal = oldestReportTotals[c.key] ?? 0;
+      const newestVal = newestReportTotals[c.key] ?? 0;
       columnDeltas[c.key] = calculatePercentageDelta(newestVal, oldestVal);
     });
 
@@ -219,7 +299,7 @@ export function compareWeeklyReports(reports: WeeklyReport[]): ReportComparisonR
       columns,
       reportsData,
       columnAverages,
-      columnDeltas: columnDeltas as Record<string, number>,
+      columnDeltas,
     });
   });
 
@@ -242,6 +322,7 @@ export function compileMonthlyPackage(
 
   const includedWeeklyReportIds = filteredReports.map((r) => r.id);
   const sectionSummaries: MonthlyPackage["sectionSummaries"] = {};
+  const templateMetricSummaries: NonNullable<MonthlyPackage["templateMetricSummaries"]> = {};
 
   if (filteredReports.length === 0) {
     return {
@@ -260,6 +341,19 @@ export function compileMonthlyPackage(
   const sectionMap = new Map<string, ReportColumnDef[]>();
 
   filteredReports.forEach((rpt) => {
+    (rpt.selectedTemplates || []).forEach((selected) => {
+      const templateSummary = templateMetricSummaries[selected.templateId] || { templateName: selected.templateSnapshot.name, metrics: {} };
+      selected.metrics.forEach((metric) => {
+        const value = selected.values[metric.id];
+        if (value === null || value === undefined || !Number.isFinite(value)) return;
+        const summary = templateSummary.metrics[metric.id] || { label: metric.label, total: 0, average: 0, reportedWeekCount: 0 };
+        summary.total += value;
+        summary.reportedWeekCount += 1;
+        summary.average = Math.round((summary.total / summary.reportedWeekCount) * 100) / 100;
+        templateSummary.metrics[metric.id] = summary;
+      });
+      templateMetricSummaries[selected.templateId] = templateSummary;
+    });
     (rpt.snapshotTemplate || []).forEach((sec) => {
       if (!sectionMap.has(sec.id)) {
         sectionMap.set(sec.id, sec.columns);
@@ -308,5 +402,6 @@ export function compileMonthlyPackage(
     compiledAt: new Date(),
     includedWeeklyReportIds,
     sectionSummaries,
+    templateMetricSummaries,
   };
 }

@@ -12,6 +12,7 @@ import {
 import { WeeklyReport } from "@/types/reporting";
 import { compareWeeklyReports } from "@/lib/reportingUtils";
 import { fetchUserWeeklyReportsHistory } from "@/lib/reportingService";
+import { WeeklyMetricsChart } from "./WeeklyMetricsChart";
 
 interface Props {
   userId: string;
@@ -144,11 +145,13 @@ export function WeeklyComparisonView({ userId }: Props) {
           Select at least 1 weekly report above to view side-by-side comparison tables.
         </div>
       ) : comparisonResult.alignedSections.length === 0 ? (
-        <div className="rounded-2xl border border-[var(--border)] bg-[var(--bg-surface)] p-8 text-center text-xs text-[var(--text-muted)]">
-          No section data available across selected reports.
+        <div className="space-y-4">
+          {selectedReports.some((report) => report.selectedTemplates?.length) && <WeeklyMetricsChart reports={selectedReports} />}
+          <div className="rounded-2xl border border-[var(--border)] bg-[var(--bg-surface)] p-8 text-center text-xs text-[var(--text-muted)]">No legacy table sections are stored in these reports.</div>
         </div>
       ) : (
         <div className="space-y-6">
+          {selectedReports.some((report) => report.selectedTemplates?.length) && <WeeklyMetricsChart reports={selectedReports} />}
           {comparisonResult.alignedSections.map((sec, secIdx) => (
             <div
               key={sec.sectionId}
@@ -160,6 +163,28 @@ export function WeeklyComparisonView({ userId }: Props) {
                     {secIdx + 1}
                   </span>
                   <h3 className="font-bold text-sm text-[var(--text-primary)]">{sec.sectionTitle}</h3>
+                </div>
+              </div>
+
+              <div className="border-b border-[var(--border)] p-4">
+                <p className="mb-3 text-[10px] font-bold uppercase tracking-wider text-[var(--text-muted)]">Weekly totals graph</p>
+                <div className="space-y-3">
+                  {sec.columns.filter((col) => col.type === "number" || col.type === "currency" || col.isCalculatedTotal).map((col) => {
+                    const values = sec.reportsData.map((report) => report.totals[col.key] ?? null);
+                    const max = Math.max(...values.filter((value): value is number => value !== null), 1);
+                    return <div key={col.key} className="grid grid-cols-[minmax(90px,150px)_1fr] items-center gap-3">
+                      <span className="truncate text-xs font-semibold text-[var(--text-primary)]" title={col.label}>{col.label}</span>
+                      <div className="flex h-9 items-end gap-2 border-b border-[var(--border)]">
+                        {sec.reportsData.map((report, index) => {
+                          const value = values[index];
+                          return <div key={report.reportId} className="group relative flex h-full min-w-0 flex-1 items-end justify-center" title={`${report.weekLabel}: ${value === null ? "—" : `${col.type === "currency" ? "$" : ""}${value.toLocaleString()}`} `}>
+                            {value !== null && <div className="w-full max-w-12 rounded-t bg-blue-500/80 transition-all" style={{ height: `${Math.max(4, (value / max) * 100)}%` }} />}
+                            <span className="absolute -bottom-4 truncate text-[9px] text-[var(--text-muted)]">{report.weekLabel}</span>
+                          </div>;
+                        })}
+                      </div>
+                    </div>;
+                  })}
                 </div>
               </div>
 
@@ -178,14 +203,14 @@ export function WeeklyComparisonView({ userId }: Props) {
 
                       <div className="grid grid-cols-2 gap-2 text-xs pt-1">
                         {sec.reportsData.map((rptData) => {
-                          const val = rptData.totals[col.key] || 0;
+                          const val = rptData.totals[col.key] ?? null;
                           return (
                             <div key={rptData.reportId} className="rounded-lg bg-[var(--bg-surface)] p-2 border border-[var(--border)]">
                               <span className="text-[9px] text-[var(--text-muted)] font-semibold truncate block">
                                 {rptData.weekLabel}
                               </span>
                               <span className="text-xs font-bold text-[var(--text-primary)] block">
-                                {isNumeric ? (col.type === "currency" ? `$${val.toLocaleString()}` : val.toLocaleString()) : "—"}
+                                    {isNumeric && val !== null ? (col.type === "currency" ? `$${val.toLocaleString()}` : val.toLocaleString()) : "—"}
                               </span>
                             </div>
                           );
@@ -244,13 +269,13 @@ export function WeeklyComparisonView({ userId }: Props) {
                           </td>
 
                           {sec.reportsData.map((rptData) => {
-                            const val = rptData.totals[col.key] || 0;
+                            const val = rptData.totals[col.key] ?? null;
                             return (
                               <td
                                 key={rptData.reportId}
                                 className="px-3 py-2.5 text-center font-semibold border-l border-[var(--border)] text-[var(--text-primary)]"
                               >
-                                {isNumeric
+                                {isNumeric && val !== null
                                   ? col.type === "currency"
                                     ? `$${val.toLocaleString()}`
                                     : val.toLocaleString()

@@ -1,9 +1,132 @@
 import { db } from "@/lib/firebase";
 import { mergeTemplates } from "@/lib/reportingUtils";
-import { MonthlyPackage, ReportSectionDef, ReportTemplate, WeeklyReport } from "@/types/reporting";
-import { doc, getDoc, serverTimestamp, setDoc } from "firebase/firestore";
+import { validateApplicationCounts } from "@/lib/reportingUtils";
+import { MonthlyPackage, PersonalReportTemplate, ReportMetricDef, ReportSectionDef, ReportTemplate, SharedReportTemplate, ReportTemplateAssignment, SelectedReportTemplate, WeeklyReport } from "@/types/reporting";
+import { collection, deleteDoc, doc, getDoc, getDocs, orderBy, query, serverTimestamp, setDoc, where, writeBatch } from "firebase/firestore";
 
 const GLOBAL_ADMIN_DOC_ID = "global_admin";
+
+export function buildDefaultApplicationTemplate(adminUid: string): SharedReportTemplate {
+  const pipelines = ["Lead Assigned", "Documents Received", "Prospective", "Non Prospective", "Duration of Ad", "Future Leads", "Not Concluded", "Application Submitted"];
+  const metrics: ReportMetricDef[] = pipelines.map((label) => ({ id: label.toLowerCase().replace(/[^a-z0-9]+/g, "_"), label, type: "number", group: "PIPELINE" }));
+  metrics.push({ id: "conversion", label: "Conversion", type: "number", group: "PIPELINE" });
+  metrics.push({ id: "total_applications", label: "Total Applications", type: "number", group: "APPLICATION_TOTAL" });
+  const channels = [{ id: "b2b", name: "B2B", channel: "B2B" as const }, { id: "b2c", name: "B2C", channel: "B2C" as const }, { id: "subagents", name: "Subagents", channel: "SUBAGENTS" as const }];
+  channels.forEach(({ id, name, channel }) => {
+    metrics.push({ id: `applications_${id}`, label: `${name} Applications`, type: "number", group: "APPLICATION_CHANNEL", channel });
+    metrics.push({ id: `conditional_offers_${id}`, label: `${name} Conditional Offers`, type: "number", group: "OFFER_STATUS", channel });
+    metrics.push({ id: `unconditional_offers_${id}`, label: `${name} Unconditional Offers`, type: "number", group: "OFFER_STATUS", channel });
+    metrics.push({ id: `awaiting_offers_${id}`, label: `${name} Awaiting Offers`, type: "number", group: "OFFER_STATUS", channel });
+  });
+  return { id: "application_default", name: "Application", kind: "APPLICATION", metrics, createdBy: adminUid, updatedBy: adminUid };
+}
+
+export function buildUniversalDefaultTemplate(ownerUid: string): SharedReportTemplate {
+  return { ...buildDefaultApplicationTemplate(ownerUid), id: "weekly_report_starter", name: "Weekly Report Starter" };
+}
+
+export function buildDefaultLeadTemplate(adminUid: string): SharedReportTemplate {
+  return { id: "lead_default", name: "Lead", kind: "LEAD", metrics: [], createdBy: adminUid, updatedBy: adminUid };
+}
+
+export async function fetchSharedReportTemplates(): Promise<SharedReportTemplate[]> {
+  const snap = await getDocs(query(collection(db, "reportTemplates"), where("kind", "in", ["APPLICATION", "LEAD"])));
+  return snap.docs.filter((row) => {
+    const data = row.data();
+    return row.id !== GLOBAL_ADMIN_DOC_ID && !data.userId && (data.kind === "APPLICATION" || data.kind === "LEAD") && Array.isArray(data.metrics);
+  }).map((row) => ({ id: row.id, ...row.data() } as SharedReportTemplate)).sort((left, right) => left.name.localeCompare(right.name));
+}
+
+export async function fetchAssignedReportTemplates(uid: string): Promise<SharedReportTemplate[]> {
+  const assignment = await fetchReportTemplateAssignment(uid);
+  if (!assignment?.templateIds.length) return [];
+  const rows = await Promise.all(assignment.templateIds.map(async (templateId) => {
+    const snap = await getDoc(doc(db, "reportTemplates", templateId));
+    if (!snap.exists()) return null;
+    const data = snap.data();
+    return (data.kind === "APPLICATION" || data.kind === "LEAD") && Array.isArray(data.metrics) ? ({ id: snap.id, ...data } as SharedReportTemplate) : null;
+  }));
+  return rows.filter((row): row is SharedReportTemplate => row !== null);
+}
+
+export async function fetchPersonalReportTemplates(uid: string): Promise<PersonalReportTemplate[]> {
+  const snap = await getDocs(query(collection(db, "staffReportTemplates"), where("ownerUid", "==", uid)));
+  return snap.docs.map((row) => ({ id: row.id, ...row.data() } as PersonalReportTemplate));
+}
+
+export async function savePersonalReportTemplate(template: PersonalReportTemplate, uid: string): Promise<void> {
+  if (template.ownerUid !== uid) throw new Error("A personal template must belong to the current staff account.");
+  const ref = doc(db, "staffReportTemplates", template.id);
+  const existing = await getDoc(ref);
+  if (existing.exists() && existing.data().ownerUid !== uid) throw new Error("This template belongs to another account.");
+  const assignmentRef = doc(db, "reportTemplateAssignments", uid);
+  const assignmentSnap = await getDoc(assignmentRef);
+  const assignment = assignmentSnap.exists() ? assignmentSnap.data() : {};
+  const personalTemplateIds = Array.from(new Set([...(assignment.personalTemplateIds || []), template.id]));
+  const personalApplicationTemplateIds = template.kind === "APPLICATION"
+    ? Array.from(new Set([...(assignment.personalApplicationTemplateIds || []), template.id]))
+    : (assignment.personalApplicationTemplateIds || []).filter((id: string) => id !== template.id);
+  const batch = writeBatch(db);
+  batch.set(ref, { ...template, ownerUid: uid, createdBy: existing.exists() ? existing.data().createdBy || uid : uid, updatedBy: uid, updatedAt: serverTimestamp(), ...(!existing.exists() ? { createdAt: serverTimestamp() } : {}) }, { merge: true });
+  batch.set(assignmentRef, { uid, personalTemplateIds, personalApplicationTemplateIds, updatedBy: uid, updatedAt: serverTimestamp() }, { merge: true });
+  await batch.commit();
+}
+
+export async function deletePersonalReportTemplate(templateId: string, uid: string): Promise<void> {
+  const ref = doc(db, "staffReportTemplates", templateId);
+  const existing = await getDoc(ref);
+  if (!existing.exists()) return;
+  if (existing.data().ownerUid !== uid) throw new Error("You can only delete your own templates.");
+  // Keep the library-index ID so drafts already snapshotting this template can still be submitted.
+  await deleteDoc(ref);
+}
+
+export async function saveSharedReportTemplate(template: SharedReportTemplate, adminUid: string): Promise<void> {
+  const ref = doc(db, "reportTemplates", template.id);
+  const existing = await getDoc(ref);
+  await setDoc(ref, { ...template, createdBy: existing.exists() ? (existing.data().createdBy || adminUid) : adminUid, updatedBy: adminUid, updatedAt: serverTimestamp(), ...(!existing.exists() ? { createdAt: serverTimestamp() } : {}) }, { merge: true });
+}
+
+export async function fetchReportTemplateAssignment(uid: string): Promise<ReportTemplateAssignment | null> {
+  const snap = await getDoc(doc(db, "reportTemplateAssignments", uid));
+  return snap.exists() ? ({ uid: snap.id, ...snap.data() } as ReportTemplateAssignment) : null;
+}
+
+export async function saveReportTemplateAssignment(uid: string, templateIds: string[], adminUid: string): Promise<void> {
+  const uniqueTemplateIds = Array.from(new Set(templateIds));
+  const templateRows = await Promise.all(uniqueTemplateIds.map((templateId) => getDoc(doc(db, "reportTemplates", templateId))));
+  const applicationTemplateIds = templateRows.filter((row) => row.exists() && row.data().kind === "APPLICATION").map((row) => row.id);
+  await setDoc(doc(db, "reportTemplateAssignments", uid), { uid, templateIds: uniqueTemplateIds, applicationTemplateIds, updatedBy: adminUid, updatedAt: serverTimestamp() }, { merge: true });
+}
+
+export async function saveAssignedWeeklyReportDraft(report: WeeklyReport & { selectedTemplates: SelectedReportTemplate[] }, isAdmin = false): Promise<void> {
+  if (report.selectedTemplates.length > 5) throw new Error("Choose no more than five report templates for one week.");
+  if (new Set(report.selectedTemplates.map((item) => item.templateId)).size !== report.selectedTemplates.length) throw new Error("A template can only be selected once per weekly report.");
+  const assignment = await fetchReportTemplateAssignment(report.userId);
+  const allowedTemplateIds = new Set([...(assignment?.templateIds || []), ...(assignment?.personalTemplateIds || [])]);
+  if (!isAdmin && report.selectedTemplates.some((item) => !allowedTemplateIds.has(item.templateId))) throw new Error("One or more selected templates are not in this account's template library.");
+  const ref = doc(db, "weeklyReports", report.id);
+  const { selectedTemplates, ...legacySafeData } = report;
+  const normalizedTemplates = selectedTemplates.map((item) => ({ ...item, metricIds: item.metrics.map((metric) => metric.id) }));
+  await setDoc(ref, { ...legacySafeData, selectedTemplatesById: Object.fromEntries(normalizedTemplates.map((item) => [item.templateId, item])), updatedAt: serverTimestamp() }, { merge: true });
+}
+
+export async function submitAssignedWeeklyReport(reportId: string, selectedTemplates: SelectedReportTemplate[]): Promise<void> {
+  if (selectedTemplates.length > 5) throw new Error("Choose no more than five report templates for one week.");
+  if (selectedTemplates.filter((item) => item.templateSnapshot.kind === "APPLICATION").length > 1) throw new Error("Choose only one Application template for one week.");
+  const application = selectedTemplates.find((item) => item.templateSnapshot.kind === "APPLICATION");
+  if (application) {
+    const validation = validateApplicationCounts(application.values, application.metrics);
+    if (!validation.valid) throw new Error(`Application counts are not valid: ${validation.errors.join(" ")}`);
+  }
+  const normalizedTemplates = selectedTemplates.map((item) => ({ ...item, metricIds: item.metrics.map((metric) => metric.id) }));
+  await setDoc(doc(db, "weeklyReports", reportId), { selectedTemplatesById: Object.fromEntries(normalizedTemplates.map((item) => [item.templateId, item])), status: "SUBMITTED", submittedAt: serverTimestamp(), updatedAt: serverTimestamp() }, { merge: true });
+}
+
+function normalizeWeeklyReport(id: string, data: Record<string, any>): WeeklyReport {
+  const selectedTemplates = data.selectedTemplates || (data.selectedTemplatesById ? Object.values(data.selectedTemplatesById) : undefined);
+  return { id, ...data, ...(selectedTemplates ? { selectedTemplates } : {}) } as WeeklyReport;
+}
 
 /**
  * Fetches the global admin required template sections.
@@ -119,7 +242,7 @@ export async function fetchWeeklyReport(
     const docRef = doc(db, "weeklyReports", docId);
     const snap = await getDoc(docRef);
     if (snap.exists()) {
-      return { id: snap.id, ...snap.data() } as WeeklyReport;
+      return normalizeWeeklyReport(snap.id, snap.data());
     }
   } catch (err) {
     console.warn(`Could not fetch weekly report ${docId}:`, err);
@@ -176,7 +299,7 @@ export async function fetchUserWeeklyReportsHistory(userId: string): Promise<Wee
   try {
     const q = query(collection(db, "weeklyReports"), where("userId", "==", userId));
     const snap = await getDocs(q);
-    const reports = snap.docs.map((doc) => ({ id: doc.id, ...doc.data() } as WeeklyReport));
+    const reports = snap.docs.map((row) => normalizeWeeklyReport(row.id, row.data()));
     return reports.sort((a, b) => b.weekStartDate.localeCompare(a.weekStartDate));
   } catch (err) {
     console.warn(`Could not fetch weekly history for user ${userId}:`, err);
@@ -206,7 +329,9 @@ export async function fetchOrCompileMonthlyPackage(
       const cached = { id: snap.id, ...snap.data() } as MonthlyPackage;
       const cachedIds = (cached.includedWeeklyReportIds || []).slice().sort().join(",");
       const freshIds = compiled.includedWeeklyReportIds.slice().sort().join(",");
-      if (cachedIds === freshIds) {
+      const compiledHasTemplateMetrics = Object.keys(compiled.templateMetricSummaries || {}).length > 0;
+      const cachedHasTemplateMetrics = Object.keys(cached.templateMetricSummaries || {}).length > 0;
+      if (cachedIds === freshIds && compiledHasTemplateMetrics === cachedHasTemplateMetrics) {
         return cached;
       }
     }
@@ -293,7 +418,7 @@ export async function fetchAllWeeklyReportsForWeek(
       where("weekNumber", "==", weekNumber)
     );
     const snap = await getDocs(q);
-    return snap.docs.map((doc) => ({ id: doc.id, ...doc.data() } as WeeklyReport));
+    return snap.docs.map((row) => normalizeWeeklyReport(row.id, row.data()));
   } catch (err) {
     console.warn(`Could not fetch all weekly reports for ${year} W${weekNumber}:`, err);
     return [];

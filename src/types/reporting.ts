@@ -25,6 +25,50 @@ export interface ReportTemplate {
   updatedBy?: string;
 }
 
+export type ReportTemplateKind = "APPLICATION" | "LEAD";
+
+export interface ReportMetricDef {
+  id: string;
+  label: string;
+  type: "number";
+  group?: "PIPELINE" | "APPLICATION_TOTAL" | "APPLICATION_CHANNEL" | "OFFER_STATUS";
+  channel?: "B2B" | "B2C" | "SUBAGENTS";
+}
+
+export interface SharedReportTemplate {
+  id: string;
+  name: string;
+  kind: ReportTemplateKind;
+  metrics: ReportMetricDef[];
+  createdBy: string;
+  updatedBy: string;
+  createdAt?: FirestoreTimestampValue;
+  updatedAt?: FirestoreTimestampValue;
+}
+
+export interface PersonalReportTemplate extends SharedReportTemplate {
+  ownerUid: string;
+  sourceTemplateId?: string | null;
+}
+
+export interface ReportTemplateAssignment {
+  uid: string;
+  templateIds: string[];
+  applicationTemplateIds?: string[];
+  personalTemplateIds?: string[];
+  personalApplicationTemplateIds?: string[];
+  updatedBy: string;
+  updatedAt?: FirestoreTimestampValue;
+}
+
+export interface SelectedReportTemplate {
+  templateId: string;
+  templateSnapshot: SharedReportTemplate;
+  metrics: ReportMetricDef[];
+  values: Record<string, number | null>;
+  metricIds?: string[];
+}
+
 export interface WeeklyReport {
   id: string;
   userId: string;
@@ -40,6 +84,16 @@ export interface WeeklyReport {
   snapshotTemplate: ReportSectionDef[];
   data: Record<string, Array<Record<string, any>>>;
   totals?: Record<string, Record<string, number>>;
+  selectedTemplates?: SelectedReportTemplate[];
+  selectedTemplatesById?: Record<string, SelectedReportTemplate>;
+  applicationTemplateId?: string | null;
+}
+
+export interface ApplicationCountValidation {
+  valid: boolean;
+  errors: string[];
+  expectedTotal: number;
+  channelTotals: Record<"B2B" | "B2C" | "SUBAGENTS", { applications: number; offers: number }>;
 }
 
 export interface MonthlyPackage {
@@ -59,6 +113,7 @@ export interface MonthlyPackage {
       rowCount: number;
     }
   >;
+  templateMetricSummaries?: Record<string, { templateName: string; metrics: Record<string, { label: string; total: number; average: number; reportedWeekCount: number }> }>;
 }
 
 export interface LateUnlockRequest {
@@ -80,7 +135,7 @@ export interface ReportComparisonResult {
       reportId: string;
       weekLabel: string;
       rows: Array<Record<string, any>>;
-      totals: Record<string, number>;
+      totals: Record<string, number | null>;
     }>;
     columnAverages: Record<string, number>;
     columnDeltas: Record<string, number | "NEW">;

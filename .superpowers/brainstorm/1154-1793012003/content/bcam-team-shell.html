@@ -1,0 +1,48 @@
+<h2>BCAM’s actual interface, carrying Team’s modules</h2>
+<p class="subtitle">This follows the screenshot you sent: the same top bar, expanded enterprise sidebar, dark navy canvas, gold active state, ambient background, and dashboard cards. Team’s current modules join BCAM’s modules in this shell.</p>
+
+<div class="cards" style="grid-template-columns:minmax(320px,1fr);">
+  <div class="card" data-choice="bcam-shell-for-team" onclick="toggleSelect(this)">
+    <div class="card-image" style="padding:14px;background:#e8edf2;">
+      <div style="height:510px;overflow:hidden;border:1px solid #27394a;border-radius:12px;background:#050b12;color:#e4ebf4;box-shadow:0 14px 40px #0c1d2f35;font-family:Arial,sans-serif;">
+        <div style="height:49px;display:flex;align-items:center;padding:0 18px;border-bottom:1px solid #263342;background:#0c1723;box-sizing:border-box;">
+          <div style="width:29px;height:29px;border:1px solid #e1bf54;border-radius:50%;color:#e1bf54;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:17px;margin-right:10px;">B</div>
+          <div style="font-size:14px;font-weight:700;">Basechan Enterprise <span style="font-size:9px;font-weight:400;color:#92a3b5;margin-left:5px;">Staff & Assets</span></div>
+          <div style="margin-left:auto;display:flex;align-items:center;gap:8px;font-size:9px;color:#aab8c7;">
+            <span style="border:1px solid #6d5b24;border-radius:18px;padding:6px 9px;color:#e1bf54;">✓ Synced</span><span style="border:1px solid #344455;border-radius:18px;padding:6px 8px;">♧</span><span style="border:1px solid #344455;border-radius:18px;padding:6px 8px;">?</span><span style="border:1px solid #344455;border-radius:18px;padding:6px 8px;">☼</span><span style="border:1px solid #e1bf54;border-radius:50%;width:24px;height:24px;display:flex;align-items:center;justify-content:center;color:#e1bf54;">B</span>
+          </div>
+        </div>
+        <div style="display:flex;height:461px;">
+          <div style="width:220px;flex:none;background:linear-gradient(150deg,#09131e,#07101a 60%,#0c1d2f);border-right:1px solid #293746;padding:15px 10px 0;box-sizing:border-box;display:flex;flex-direction:column;">
+            <div style="font-size:9px;letter-spacing:1px;color:#91a2b4;font-weight:700;padding:2px 8px 10px;">ENTERPRISE MODULES</div>
+            <div style="overflow:hidden;flex:1;font-size:10px;color:#a8b6c6;">
+              <div style="padding:8px 9px;border:1px solid #274661;background:#0d2032;border-radius:9px;color:#e1bf54;font-weight:700;margin-bottom:3px;">▦ &nbsp;Overview & Metrics</div>
+              <div style="padding:6px 9px;">◷ &nbsp;Attendance & Live Team</div><div style="padding:6px 9px;">☷ &nbsp;Tasks & Inbox</div><div style="padding:6px 9px;">♙ &nbsp;Staff Directory</div><div style="padding:6px 9px;">▤ &nbsp;Staff Reports</div><div style="padding:6px 9px;">◫ &nbsp;Finance & Procurement</div><div style="padding:6px 9px;">☏ &nbsp;Chat & Broadcasts</div>
+              <div style="height:1px;background:#25394b;margin:5px 7px;"></div>
+              <div style="padding:6px 9px;">▣ &nbsp;Physical Hardware</div><div style="padding:6px 9px;">△ &nbsp;Missing Details Auditor</div><div style="padding:6px 9px;">⚿ &nbsp;Digital & Credentials Vault</div><div style="padding:6px 9px;">▤ &nbsp;Data & Workbooks</div><div style="padding:6px 9px;">⌂ &nbsp;Office & Facilities</div><div style="padding:6px 9px;">▧ &nbsp;Stocktake</div><div style="padding:6px 9px;">⇧ &nbsp;Excel Ingestion & Sync</div><div style="padding:6px 9px;">▱ &nbsp;Workspace Links</div>
+            </div>
+            <div style="border-top:1px solid #293746;padding:10px 5px 9px;font-size:9px;color:#dce5ef;"><b>Peter Abah</b> <span style="color:#e1bf54;border:1px solid #776428;border-radius:10px;padding:2px 5px;">Admin</span><div style="color:#8ea0b3;margin-top:4px;">⌖ Abuja Branch · Google account</div></div>
+          </div>
+          <div style="position:relative;flex:1;min-width:0;padding:17px 19px;background:radial-gradient(ellipse at 48% 16%,#10243a 0%,#07111d 55%,#050b12 100%);">
+            <div style="font-size:8px;color:#8397ab;letter-spacing:.5px;">MONDAY, OCTOBER 26 &nbsp;·&nbsp; LIVE FIRESTORE SYNC</div>
+            <div style="display:flex;align-items:center;margin-top:6px;"><div><div style="font-size:17px;font-weight:700;">Welcome back, Peter</div><div style="font-size:9px;color:#8fa0b2;margin-top:4px;">Your team and asset workspace at a glance.</div></div><button style="margin-left:auto;background:#d5ad34;color:#111a22;border:0;border-radius:7px;padding:8px 10px;font-size:9px;font-weight:700;">＋ Quick action</button></div>
+            <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:16px;">
+              <div style="background:#0c1825;border:1px solid #233448;border-radius:9px;padding:11px 10px;"><div style="font-size:8px;color:#8d9daf;">PEOPLE</div><div style="font-size:19px;font-weight:700;margin-top:6px;">56</div><div style="font-size:8px;color:#8494a5;margin-top:3px;">Staff members</div></div>
+              <div style="background:#0c1825;border:1px solid #233448;border-radius:9px;padding:11px 10px;"><div style="font-size:8px;color:#8d9daf;">TASKS</div><div style="font-size:19px;font-weight:700;color:#e1bf54;margin-top:6px;">12</div><div style="font-size:8px;color:#8494a5;margin-top:3px;">Need attention</div></div>
+              <div style="background:#0c1825;border:1px solid #233448;border-radius:9px;padding:11px 10px;"><div style="font-size:8px;color:#8d9daf;">HARDWARE</div><div style="font-size:19px;font-weight:700;margin-top:6px;">56</div><div style="font-size:8px;color:#8494a5;margin-top:3px;">Tracked assets</div></div>
+              <div style="background:#0c1825;border:1px solid #233448;border-radius:9px;padding:11px 10px;"><div style="font-size:8px;color:#8d9daf;">AUDIT QUEUE</div><div style="font-size:19px;font-weight:700;color:#e1bf54;margin-top:6px;">18</div><div style="font-size:8px;color:#8494a5;margin-top:3px;">Records to review</div></div>
+            </div>
+            <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:9px;margin-top:10px;height:205px;">
+              <div style="background:#0c1825;border:1px solid #233448;border-radius:9px;padding:11px;"><div style="font-size:10px;font-weight:700;">Today at a glance</div><div style="font-size:8px;color:#8193a6;margin-top:4px;">Attendance, tasks and updates</div><div style="margin-top:13px;font-size:9px;color:#cad4df;">● &nbsp;Staff clocked in <span style="float:right;color:#e1bf54;">38 / 56</span></div><div style="height:5px;background:#1a2a3a;border-radius:4px;margin-top:6px;"><div style="height:5px;width:68%;background:#e1bf54;border-radius:4px;"></div></div><div style="margin-top:14px;font-size:9px;color:#cad4df;">● &nbsp;Open task queue <span style="float:right;">12</span></div><div style="height:5px;background:#1a2a3a;border-radius:4px;margin-top:6px;"><div style="height:5px;width:42%;background:#375a7b;border-radius:4px;"></div></div><div style="margin-top:14px;font-size:9px;color:#cad4df;">● &nbsp;Assets needing attention <span style="float:right;color:#e1bf54;">18</span></div></div>
+              <div style="background:#0c1825;border:1px solid #233448;border-radius:9px;padding:11px;"><div style="font-size:10px;font-weight:700;">My work & assigned assets</div><div style="margin-top:10px;background:#101f2e;border:1px solid #233448;border-radius:7px;padding:9px;font-size:9px;">Follow up on branch stocktake<div style="font-size:8px;color:#8293a5;margin-top:4px;">Task · Due today</div></div><div style="margin-top:7px;background:#101f2e;border:1px solid #233448;border-radius:7px;padding:9px;font-size:9px;">Laptop · BC-014<div style="font-size:8px;color:#8293a5;margin-top:4px;">Assigned to you · Active</div></div><div style="margin-top:7px;color:#e1bf54;font-size:8px;">View my tasks and assets &nbsp;›</div></div>
+              <div style="background:#0c1825;border:1px solid #233448;border-radius:9px;padding:11px;"><div style="font-size:10px;font-weight:700;">Needs attention</div><div style="font-size:8px;color:#8193a6;margin-top:4px;">Team and asset follow-ups</div><div style="margin-top:12px;background:#101f2e;border-radius:6px;padding:8px;font-size:8px;"><span style="color:#e1bf54;">ASSET</span><div style="margin-top:4px;font-size:9px;">Serial number missing</div></div><div style="margin-top:6px;background:#101f2e;border-radius:6px;padding:8px;font-size:8px;"><span style="color:#83b6db;">TASK</span><div style="margin-top:4px;font-size:9px;">Repair request awaiting review</div></div><div style="margin-top:6px;background:#101f2e;border-radius:6px;padding:8px;font-size:8px;"><span style="color:#a8c99c;">PEOPLE</span><div style="margin-top:4px;font-size:9px;">3 leave requests to review</div></div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="card-body"><h3>BCAM shell, directly reused</h3><p>BCAM’s existing header, sidebar, card language, colors, responsive behavior, and motion become the Team interface. Team’s working routes and Firestore data stay behind it; BCAM asset modules are added into the same navigation.</p></div>
+  </div>
+</div>
+
+<p class="subtitle" style="margin-top:14px;">Does this match what you mean by using the BCAM code and visual in Basechan-team? Click the mockup, then tell me what to adjust.</p>

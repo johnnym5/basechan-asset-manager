@@ -1009,7 +1009,7 @@ export default function Home() {
                   )}
 
                   {activeTab === "reporting" && (
-                    <ReportingTab userProfile={userProfile} staffList={staff} />
+                    <ReportingTab userProfile={userProfile} staffList={staff} grant={currentGrant} onManageStaffAccess={handleManageAccess} />
                   )}
 
                   {activeTab === "ingestion" && (

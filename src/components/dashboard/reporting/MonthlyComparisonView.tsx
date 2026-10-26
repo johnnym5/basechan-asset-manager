@@ -17,6 +17,7 @@ import { exportToExcel } from "@/lib/excelParser";
 interface Props {
   userId: string;
   userName: string;
+  canGenerate: boolean;
 }
 
 const MONTH_NAMES = [
@@ -59,7 +60,7 @@ function renderDeltaBadge(delta: number | "NEW" | undefined) {
   );
 }
 
-export function MonthlyComparisonView({ userId, userName }: Props) {
+export function MonthlyComparisonView({ userId, userName, canGenerate }: Props) {
   const [history, setHistory] = useState<MonthlyPackage[]>([]);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
@@ -125,6 +126,8 @@ export function MonthlyComparisonView({ userId, userName }: Props) {
   selectedPackages.forEach((pkg) => {
     Object.keys(pkg.sectionSummaries || {}).forEach((secId) => sectionIdsSet.add(secId));
   });
+  const templateIdsSet = new Set<string>();
+  selectedPackages.forEach((pkg) => Object.keys(pkg.templateMetricSummaries || {}).forEach((templateId) => templateIdsSet.add(templateId)));
 
   const handleExportMonthly = () => {
     const dataToExport: any[] = [];
@@ -141,6 +144,18 @@ export function MonthlyComparisonView({ userId, userName }: Props) {
           });
         }
       });
+    selectedPackages.forEach((pkg) => Object.entries(pkg.templateMetricSummaries || {}).forEach(([templateId, template]) => {
+      Object.entries(template.metrics).forEach(([metricId, metric]) => dataToExport.push({
+        "Month / Year": `${MONTH_NAMES[pkg.month - 1]} ${pkg.year}`,
+        "Template": template.templateName,
+        "Metric": metric.label,
+        "Template ID": templateId,
+        "Metric ID": metricId,
+        "Total": metric.total,
+        "Average per reported week": metric.average,
+        "Weeks with value": metric.reportedWeekCount,
+      }));
+    }));
     });
 
     exportToExcel(
@@ -175,7 +190,7 @@ export function MonthlyComparisonView({ userId, userName }: Props) {
         </div>
 
         {/* Month Compiler Input Bar */}
-        <div className="rounded-xl bg-[var(--bg-muted)]/50 p-3 flex flex-wrap items-center gap-3 border border-[var(--border)]">
+        {canGenerate && <div className="rounded-xl bg-[var(--bg-muted)]/50 p-3 flex flex-wrap items-center gap-3 border border-[var(--border)]">
           <span className="text-xs font-bold text-[var(--text-primary)]">Compile Month Package:</span>
           <select
             value={compileMonth}
@@ -207,7 +222,7 @@ export function MonthlyComparisonView({ userId, userName }: Props) {
           >
             {compiling ? "Compiling..." : "Compile & Add Package"}
           </button>
-        </div>
+        </div>}
 
         {/* History Checklist Selector */}
         {loading ? (
@@ -250,12 +265,21 @@ export function MonthlyComparisonView({ userId, userName }: Props) {
         <div className="rounded-2xl border border-[var(--border)] bg-[var(--bg-surface)] p-8 text-center text-xs text-[var(--text-muted)]">
           Select at least 1 monthly package above to view consolidated summaries.
         </div>
-      ) : sectionIdsSet.size === 0 ? (
+      ) : sectionIdsSet.size === 0 && templateIdsSet.size === 0 ? (
         <div className="rounded-2xl border border-[var(--border)] bg-[var(--bg-surface)] p-8 text-center text-xs text-[var(--text-muted)]">
           No section summary data available across selected monthly packages.
         </div>
       ) : (
         <div className="space-y-6">
+          {Array.from(templateIdsSet).map((templateId) => {
+            const templateName = selectedPackages.find((pkg) => pkg.templateMetricSummaries?.[templateId])?.templateMetricSummaries?.[templateId]?.templateName || templateId;
+            const metricIds = new Set<string>();
+            selectedPackages.forEach((pkg) => Object.keys(pkg.templateMetricSummaries?.[templateId]?.metrics || {}).forEach((metricId) => metricIds.add(metricId)));
+            return <div key={templateId} className="overflow-hidden rounded-2xl border border-[var(--border)] bg-[var(--bg-surface)] shadow-sm">
+              <div className="border-b border-[var(--border)] bg-[var(--bg-muted)]/40 px-4 py-3"><h3 className="text-sm font-bold">{templateName} · monthly totals</h3><p className="text-[10px] text-[var(--text-muted)]">Metrics are aligned by template and metric ID.</p></div>
+              <div className="overflow-x-auto"><table className="w-full border-collapse text-left text-xs"><thead><tr className="border-b border-[var(--border)] text-[var(--text-muted)]"><th className="px-3 py-2">Metric</th>{selectedPackages.map((pkg) => <th key={pkg.id} className="px-3 py-2 text-center">{MONTH_NAMES[pkg.month - 1]} {pkg.year}</th>)}</tr></thead><tbody className="divide-y divide-[var(--border)]">{Array.from(metricIds).map((metricId) => <tr key={metricId}><td className="px-3 py-2 font-semibold">{selectedPackages.find((pkg) => pkg.templateMetricSummaries?.[templateId]?.metrics[metricId])?.templateMetricSummaries?.[templateId]?.metrics[metricId]?.label || metricId}</td>{selectedPackages.map((pkg) => { const metric = pkg.templateMetricSummaries?.[templateId]?.metrics[metricId]; return <td key={pkg.id} className="px-3 py-2 text-center">{metric ? `${metric.total.toLocaleString()} · avg ${metric.average.toLocaleString()}` : "—"}</td>; })}</tr>)}</tbody></table></div>
+            </div>;
+          })}
           {Array.from(sectionIdsSet).map((secId, secIdx) => (
             <div
               key={secId}
