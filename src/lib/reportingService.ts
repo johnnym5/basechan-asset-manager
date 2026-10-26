@@ -54,11 +54,14 @@ export async function fetchPersonalReportTemplates(uid: string): Promise<Persona
   return snap.docs.map((row) => ({ id: row.id, ...row.data() } as PersonalReportTemplate));
 }
 
-export async function savePersonalReportTemplate(template: PersonalReportTemplate, uid: string): Promise<void> {
+export async function savePersonalReportTemplate(template: PersonalReportTemplate, uid: string, isUpdate = false): Promise<void> {
   if (template.ownerUid !== uid) throw new Error("A personal template must belong to the current staff account.");
   const ref = doc(db, "staffReportTemplates", template.id);
-  const existing = await getDoc(ref);
-  if (existing.exists() && existing.data().ownerUid !== uid) throw new Error("This template belongs to another account.");
+  // A new template cannot be read before it exists: Firestore rules authorize
+  // reads by ownerUid, which is only present after the create write succeeds.
+  // Existing templates are read only when the wizard is explicitly editing one.
+  const existing = isUpdate ? await getDoc(ref) : null;
+  if (existing?.exists() && existing.data().ownerUid !== uid) throw new Error("This template belongs to another account.");
   const assignmentRef = doc(db, "reportTemplateAssignments", uid);
   const assignmentSnap = await getDoc(assignmentRef);
   const assignment = assignmentSnap.exists() ? assignmentSnap.data() : {};
@@ -67,7 +70,7 @@ export async function savePersonalReportTemplate(template: PersonalReportTemplat
     ? Array.from(new Set([...(assignment.personalApplicationTemplateIds || []), template.id]))
     : (assignment.personalApplicationTemplateIds || []).filter((id: string) => id !== template.id);
   const batch = writeBatch(db);
-  batch.set(ref, { ...template, ownerUid: uid, createdBy: existing.exists() ? existing.data().createdBy || uid : uid, updatedBy: uid, updatedAt: serverTimestamp(), ...(!existing.exists() ? { createdAt: serverTimestamp() } : {}) }, { merge: true });
+  batch.set(ref, { ...template, ownerUid: uid, createdBy: existing?.exists() ? existing.data().createdBy || uid : uid, updatedBy: uid, updatedAt: serverTimestamp(), ...(!existing?.exists() ? { createdAt: serverTimestamp() } : {}) }, { merge: true });
   batch.set(assignmentRef, { uid, personalTemplateIds, personalApplicationTemplateIds, updatedBy: uid, updatedAt: serverTimestamp() }, { merge: true });
   await batch.commit();
 }

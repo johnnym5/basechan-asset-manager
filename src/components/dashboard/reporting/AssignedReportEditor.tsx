@@ -141,7 +141,7 @@ export function AssignedReportEditor({ userId, userName, userEmail, isAdmin, can
         createdBy: userId,
         updatedBy: userId,
       };
-      await savePersonalReportTemplate(template, userId);
+      await savePersonalReportTemplate(template, userId, Boolean(existingId));
       const rows = await reloadTemplates();
       setTemplates(rows);
       closeWizard();
