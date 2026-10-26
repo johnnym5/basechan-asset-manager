@@ -41,7 +41,7 @@ service cloud.firestore {
       let hasSub = metricIds.hasAll(['applications_subagents', 'conditional_offers_subagents', 'unconditional_offers_subagents', 'awaiting_offers_subagents']);
       return (!hasTotal || values.applications_b2b + values.applications_b2c + values.applications_subagents == values.total_applications) &&
         (!hasB2B || values.conditional_offers_b2b + values.unconditional_offers_b2b + values.awaiting_offers_b2b == values.applications_b2b) &&
-        (!hasB2C || values.conditional_offers_b2c + values.unconditional_offers_b2c + values.awaiting_offers_b2c == values.applications_c) &&
+        (!hasB2C || values.conditional_offers_b2c + values.unconditional_offers_b2c + values.awaiting_offers_b2c == values.applications_b2c) &&
         (!hasSub || values.conditional_offers_subagents + values.unconditional_offers_subagents + values.awaiting_offers_subagents == values.applications_subagents);
     }
     function validApplicationSubmission(data) {

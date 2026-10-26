@@ -78,7 +78,8 @@ export function alignWeeklyReportMetrics(reports: WeeklyReport[]): { metrics: Re
 }
 
 /**
- * Calculates the ISO week details for a given Date object.
+ * Calculates the Tuesday-to-Monday reporting week, labelled by the ISO week
+ * containing its ending Monday. A new reporting week begins every Tuesday.
  */
 export function getISOWeekDetails(dateInput: Date = new Date()): {
   year: number;
@@ -87,24 +88,21 @@ export function getISOWeekDetails(dateInput: Date = new Date()): {
   weekStartDate: string;
   weekEndDate: string;
 } {
-  const d = new Date(Date.UTC(dateInput.getFullYear(), dateInput.getMonth(), dateInput.getDate()));
-  // Set to nearest Thursday: current date + 4 - current day number (make Sunday = 7)
-  const dayNum = d.getUTCDay() || 7;
-  d.setUTCDate(d.getUTCDate() + 4 - dayNum);
-  const isoYear = d.getUTCFullYear();
+  const targetDate = new Date(dateInput.getFullYear(), dateInput.getMonth(), dateInput.getDate());
+  const daysSinceTuesday = (targetDate.getDay() + 5) % 7;
+  const tuesday = new Date(targetDate);
+  tuesday.setDate(targetDate.getDate() - daysSinceTuesday);
+  const monday = new Date(tuesday);
+  monday.setDate(tuesday.getDate() + 6);
+
+  // Label the Tuesday-to-Monday reporting period with the ISO week containing
+  // its ending Monday, keeping the existing week-number convention familiar.
+  const thursday = new Date(Date.UTC(monday.getFullYear(), monday.getMonth(), monday.getDate()));
+  const dayNum = thursday.getUTCDay() || 7;
+  thursday.setUTCDate(thursday.getUTCDate() + 4 - dayNum);
+  const isoYear = thursday.getUTCFullYear();
   const yearStart = new Date(Date.UTC(isoYear, 0, 1));
-  const weekNumber = Math.ceil(((d.getTime() - yearStart.getTime()) / 86400000 + 1) / 7);
-
-  // Determine Monday (start of week) and Sunday (end of week)
-  const targetDate = new Date(dateInput);
-  const dayOfWeek = targetDate.getDay(); // 0 = Sun, 1 = Mon ...
-  const distanceToMonday = dayOfWeek === 0 ? -6 : 1 - dayOfWeek;
-
-  const monday = new Date(targetDate);
-  monday.setDate(targetDate.getDate() + distanceToMonday);
-
-  const sunday = new Date(monday);
-  sunday.setDate(monday.getDate() + 6);
+  const weekNumber = Math.ceil(((thursday.getTime() - yearStart.getTime()) / 86400000 + 1) / 7);
 
   const formatYYYMMDD = (dt: Date) => {
     const y = dt.getFullYear();
@@ -117,8 +115,8 @@ export function getISOWeekDetails(dateInput: Date = new Date()): {
     year: isoYear,
     month: monday.getMonth() + 1, // Month index 1-12 based on Monday
     weekNumber,
-    weekStartDate: formatYYYMMDD(monday),
-    weekEndDate: formatYYYMMDD(sunday),
+    weekStartDate: formatYYYMMDD(tuesday),
+    weekEndDate: formatYYYMMDD(monday),
   };
 }
 

@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { ArrowLeft, ArrowRight, Copy, Plus, Save, Send, Trash2 } from "lucide-react";
 import { getISOWeekDetails, validateApplicationCounts } from "@/lib/reportingUtils";
 import { buildUniversalDefaultTemplate, deletePersonalReportTemplate, fetchPersonalReportTemplates, fetchSharedReportTemplates, fetchUserWeeklyReportsHistory, saveAssignedWeeklyReportDraft, savePersonalReportTemplate, submitAssignedWeeklyReport } from "@/lib/reportingService";
@@ -21,7 +21,7 @@ function cloneForWizard(template: SharedReportTemplate): SelectedReportTemplate 
 }
 
 export function AssignedReportEditor({ userId, userName, userEmail, isAdmin, canGenerate }: Props) {
-  const week = useMemo(() => getISOWeekDetails(), []);
+  const [week, setWeek] = useState(() => getISOWeekDetails());
   const [templates, setTemplates] = useState<PersonalReportTemplate[]>([]);
   const [sharedTemplates, setSharedTemplates] = useState<SharedReportTemplate[]>([]);
   const [selected, setSelected] = useState<SelectedReportTemplate[]>([]);
@@ -42,6 +42,16 @@ export function AssignedReportEditor({ userId, userName, userEmail, isAdmin, can
   const applicationTemplate = selected.find((item) => item.templateSnapshot.kind === "APPLICATION");
   const applicationValues = applicationTemplate?.values || {};
   const validation = applicationTemplate ? validateApplicationCounts(applicationValues, applicationTemplate.metrics) : null;
+
+  useEffect(() => {
+    const timer = window.setInterval(() => {
+      const currentWeek = getISOWeekDetails();
+      setWeek((previous) => previous.year === currentWeek.year && previous.weekNumber === currentWeek.weekNumber
+        ? previous
+        : currentWeek);
+    }, 60_000);
+    return () => window.clearInterval(timer);
+  }, []);
 
   const reloadTemplates = async () => {
     const rows = await fetchPersonalReportTemplates(userId);
@@ -67,6 +77,9 @@ export function AssignedReportEditor({ userId, userName, userEmail, isAdmin, can
         if (current?.selectedTemplates?.length) {
           setSelected(current.selectedTemplates);
           setReportStatus(current.status);
+        } else {
+          setSelected([]);
+          setReportStatus("DRAFT");
         }
         if (canGenerate && personal.length === 0) {
           setWizardTemplate(cloneForWizard(buildUniversalDefaultTemplate(userId)));
@@ -179,7 +192,11 @@ export function AssignedReportEditor({ userId, userName, userEmail, isAdmin, can
   };
 
   const submit = async () => {
-    if (applicationTemplate && validation && !validation.valid) { setMessage("Fix the enabled Application totals before submitting."); return; }
+    if (applicationTemplate && validation && !validation.valid) {
+      const balanceErrors = validation.errors.filter((error) => error.includes("total"));
+      setMessage(balanceErrors.length ? `Totals need to balance before submitting: ${balanceErrors.join(" ")}` : "Complete the enabled application counts before submitting.");
+      return;
+    }
     if (selected.length === 0) { setMessage("Choose at least one template before submitting."); return; }
     setSaving(true); setMessage("");
     try {
@@ -221,7 +238,7 @@ export function AssignedReportEditor({ userId, userName, userEmail, isAdmin, can
       <div className="mb-4 flex flex-wrap items-center gap-2"><button type="button" onClick={() => openWizard(buildUniversalDefaultTemplate(userId), null)} className="inline-flex items-center gap-1.5 rounded-lg bg-blue-600 px-3 py-2 text-xs font-bold text-white"><Plus className="h-3.5 w-3.5" />Create personal template</button><span className="text-[10px] text-[var(--text-muted)]">Your templates are private to your account.</span></div>
       {templates.length === 0 ? <p className="rounded-xl bg-amber-500/10 p-4 text-sm text-amber-700">Create and save a template before starting this week’s report.</p> : <div className="flex flex-wrap gap-2">{templates.map((template) => <div key={template.id} className="inline-flex items-stretch overflow-hidden rounded-xl border border-[var(--border)]"><button type="button" onClick={() => toggleTemplate(template)} disabled={reportStatus === "SUBMITTED"} className={`px-3 py-2 text-xs font-semibold ${selected.some((item) => item.templateId === template.id) ? "bg-blue-500/10 text-blue-700" : "text-[var(--text-muted)]"}`}>{selected.some((item) => item.templateId === template.id) ? "✓ " : "＋ "}{template.name}</button><button type="button" onClick={() => openWizard(template, template.id)} disabled={reportStatus === "SUBMITTED"} className="border-l border-[var(--border)] px-2 text-[10px] font-semibold text-[var(--text-muted)]">Edit</button><button type="button" onClick={() => void removeTemplate(template)} disabled={saving || reportStatus === "SUBMITTED"} className="border-l border-[var(--border)] px-2 text-rose-600 disabled:opacity-40" aria-label={`Delete ${template.name}`}><Trash2 className="h-3.5 w-3.5" /></button></div>)}</div>}
       {selected.map((item) => <div key={item.templateId} className="mt-5 rounded-xl border border-[var(--border)] p-4"><h3 className="mb-3 font-bold text-sm text-[var(--text-primary)]">{item.templateSnapshot.name}</h3><div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">{item.metrics.map((metric) => <label key={metric.id} className="space-y-1 text-xs font-semibold text-[var(--text-primary)]">{metric.label}<input type="number" min="0" step={metric.group === "PIPELINE" ? "any" : "1"} value={item.values[metric.id] ?? ""} disabled={reportStatus === "SUBMITTED"} onChange={(event) => updateValue(item.templateId, metric.id, event.target.value)} className="w-full rounded-lg border border-[var(--border)] bg-[var(--bg-primary)] px-3 py-2" /></label>)}</div></div>)}
-      {reportStatus !== "SUBMITTED" && <div className="mt-5 flex flex-wrap gap-2"><button type="button" disabled={saving} onClick={() => void saveDraft()} className="inline-flex items-center gap-2 rounded-xl border border-[var(--border)] px-4 py-2 text-xs font-bold disabled:opacity-50"><Save className="h-4 w-4" />{saving ? "Saving…" : "Save draft"}</button><button type="button" disabled={saving || selected.length === 0 || (!!validation && !validation.valid)} onClick={() => void submit()} className="inline-flex items-center gap-2 rounded-xl bg-blue-600 px-4 py-2 text-xs font-bold text-white disabled:opacity-50"><Send className="h-4 w-4" />Submit report</button></div>}
+      {reportStatus !== "SUBMITTED" && <div className="mt-5 flex flex-wrap gap-2"><button type="button" disabled={saving} onClick={() => void saveDraft()} className="inline-flex items-center gap-2 rounded-xl border border-[var(--border)] px-4 py-2 text-xs font-bold disabled:opacity-50"><Save className="h-4 w-4" />{saving ? "Saving…" : "Save draft"}</button><button type="button" disabled={saving || selected.length === 0} onClick={() => void submit()} className="inline-flex items-center gap-2 rounded-xl bg-blue-600 px-4 py-2 text-xs font-bold text-white disabled:opacity-50"><Send className="h-4 w-4" />Submit report</button></div>}
       {message && <p role="status" className="mt-3 text-xs font-semibold text-[var(--text-muted)]">{message}</p>}
     </section>
     {history.length > 0 && <section className="rounded-2xl border border-[var(--border)] bg-[var(--bg-surface)] p-4"><h3 className="mb-3 text-sm font-bold">Compare with previous submitted weeks</h3><div className="flex flex-wrap gap-2">{history.map((report) => <label key={report.id} className="inline-flex items-center gap-2 rounded-lg border border-[var(--border)] px-3 py-2 text-xs"><input type="checkbox" checked={compareIds.includes(report.id)} onChange={(event) => setCompareIds((previous) => event.target.checked ? [...previous, report.id] : previous.filter((id) => id !== report.id))} />Week {report.weekNumber} · {report.year}</label>)}</div></section>}
