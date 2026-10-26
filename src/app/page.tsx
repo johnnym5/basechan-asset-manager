@@ -80,7 +80,7 @@ import { auditAllAssets } from "@/lib/completenessAuditor";
 import { excludeArchived } from "@/lib/accessControl";
 import { ParsedWorkbookData } from "@/lib/excelParser";
 import { db } from "@/lib/firebase";
-import { collection, getDocs, getDoc, doc, updateDoc, writeBatch, serverTimestamp, query, where, setDoc, onSnapshot, deleteField } from "firebase/firestore";
+import { collection, getDocs, getDoc, doc, updateDoc, writeBatch, serverTimestamp, query, where, setDoc, onSnapshot, deleteField, arrayUnion } from "firebase/firestore";
 import { ShieldAlert, LogIn } from "lucide-react";
 import { addDoc, runTransaction, Timestamp } from "firebase/firestore";
 import { deleteField as firestoreDeleteField } from "firebase/firestore";
@@ -180,8 +180,9 @@ export default function Home() {
   const [offlineRepairs, setOfflineRepairs] = useState<PendingRepairRequest[]>([]);
   const [workspaceLinks, setWorkspaceLinks] = useState<WorkspaceLink[]>([]);
   const [workspaceFavorites, setWorkspaceFavorites] = useState<string[]>([]);
-  const [showWelcome, setShowWelcome] = useState(false);
-  const [welcomePromptedUid, setWelcomePromptedUid] = useState<string | null>(null);
+  const [guidePage, setGuidePage] = useState<TabKey | null>(null);
+  const [completedGuidePages, setCompletedGuidePages] = useState<string[]>([]);
+  const [guideProfileUid, setGuideProfileUid] = useState<string | null>(null);
   const [emulatorEmail, setEmulatorEmail] = useState("");
   const [emulatorPassword, setEmulatorPassword] = useState("");
 
@@ -367,6 +368,7 @@ export default function Home() {
         setNavDirection(nextIdx > prevIdx ? 1 : -1);
       }
       setActiveTab(nextTab);
+      if (!completedGuidePages.includes(nextTab)) setGuidePage(nextTab);
     }
   };
 
@@ -376,19 +378,24 @@ export default function Home() {
 
   useEffect(() => {
     if (!userProfile) {
-      setShowWelcome(false);
-      setWelcomePromptedUid(null);
+      setGuidePage(null);
+      setCompletedGuidePages([]);
+      setGuideProfileUid(null);
       return;
     }
-    if (!dataLoading && !userProfile.onboardingCompletedAt && welcomePromptedUid !== userProfile.uid) {
-      setWelcomePromptedUid(userProfile.uid);
-      setShowWelcome(true);
-    }
-  }, [userProfile, dataLoading, welcomePromptedUid]);
+    setCompletedGuidePages(userProfile.onboardingCompletedPages || []);
+    setGuideProfileUid(userProfile.uid);
+  }, [userProfile?.uid, userProfile?.onboardingCompletedPages]);
 
-  const completeOnboarding = async () => {
-    if (!userProfile) throw new Error("Sign in again to save your welcome progress.");
-    await setDoc(doc(db, "users", userProfile.uid), { onboardingCompletedAt: serverTimestamp() }, { merge: true });
+  useEffect(() => {
+    if (!userProfile || guideProfileUid !== userProfile.uid || dataLoading || !accessibleTabs?.[activeTab]) return;
+    if (!completedGuidePages.includes(activeTab)) setGuidePage(activeTab);
+  }, [userProfile?.uid, guideProfileUid, dataLoading, accessibleTabs, activeTab, completedGuidePages]);
+
+  const completeOnboarding = async (page: TabKey) => {
+    if (!userProfile) throw new Error("Sign in again to save your guide progress.");
+    await setDoc(doc(db, "users", userProfile.uid), { onboardingCompletedPages: arrayUnion(page) }, { merge: true });
+    setCompletedGuidePages((previous) => previous.includes(page) ? previous : [...previous, page]);
   };
   const recordsByResource: Record<ResourceKey, any[]> = { staff_inventory: staff, physical_assets: assets, digital_credentials: credentials, workbooks, facilities, reporting: [] };
   const setRecordsByResource: Record<ResourceKey, (rows: any[]) => void> = { staff_inventory: setStaff, physical_assets: setAssets, digital_credentials: setCredentials, workbooks: setWorkbooks, facilities: setFacilities, reporting: () => {} };
@@ -837,7 +844,7 @@ export default function Home() {
   return (
     <div className="min-h-screen flex flex-col relative">
       <AnimatedBackground />
-      <Navbar dataLoading={dataLoading} isOnline={isOnline} onShowHelp={() => setShowWelcome(true)} onSignOut={() => void signOutUser()} />
+      <Navbar dataLoading={dataLoading} isOnline={isOnline} onShowHelp={() => setGuidePage(activeTab)} onSignOut={() => void signOutUser()} />
 
       {/* Main Body */}
       <div className="flex-1 flex flex-col md:flex-row">
@@ -939,7 +946,7 @@ export default function Home() {
                     favorites={workspaceFavorites}
                     onNavigate={navigateToTab}
                     onToggleFavorite={toggleWorkspaceFavorite}
-                    onShowHelp={() => setShowWelcome(true)}
+                    onShowHelp={() => setGuidePage(activeTab)}
                   />)}
 
                   {activeTab === "hardware" && (
@@ -1069,7 +1076,7 @@ export default function Home() {
         {grantTarget && <AccessGrantModal staff={grantTarget} current={accessGrants[grantTarget.uid || ""]} onClose={() => setGrantTarget(null)} onSave={saveAccessGrant} />}
       </AnimatePresence>
       <AnimatePresence>
-        {showWelcome && userProfile && accessibleTabs && <OnboardingGuide displayName={userProfile.displayName} role={userProfile.role} accessibleTabs={accessibleTabs} onComplete={completeOnboarding} onDismiss={() => setShowWelcome(false)} />}
+        {guidePage && userProfile && <OnboardingGuide displayName={userProfile.displayName} role={userProfile.role} page={guidePage} onComplete={() => completeOnboarding(guidePage)} onDismiss={() => setGuidePage(null)} />}
       </AnimatePresence>
     </div>
   );

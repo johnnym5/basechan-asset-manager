@@ -101,6 +101,7 @@ export async function syncUserProfile(user: User): Promise<UserProfile> {
     const existingProfile = await getDoc(doc(db, "users", user.uid));
     if (existingProfile.exists()) {
       profile.onboardingCompletedAt = existingProfile.data().onboardingCompletedAt;
+      profile.onboardingCompletedPages = existingProfile.data().onboardingCompletedPages || [];
     }
     await setDoc(doc(db, "users", user.uid), {
       uid: user.uid,

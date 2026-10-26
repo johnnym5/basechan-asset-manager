@@ -45,6 +45,7 @@ export interface UserProfile {
   staffId?: string;
   lastLogin?: FirestoreTimestampValue;
   onboardingCompletedAt?: FirestoreTimestampValue;
+  onboardingCompletedPages?: string[];
 }
 
 export interface StaffMember {

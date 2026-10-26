@@ -131,8 +131,8 @@ service cloud.firestore {
 
     match /users/{userId} {
       allow read: if isAdmin() || (signedIn() && request.auth.uid == userId);
-      allow create: if signedIn() && request.auth.uid == userId && request.resource.data.uid == userId && request.resource.data.email == request.auth.token.email && request.resource.data.keys().hasOnly(['uid', 'email', 'displayName', 'photoURL', 'lastLogin', 'onboardingCompletedAt']) && (!('onboardingCompletedAt' in request.resource.data) || request.resource.data.onboardingCompletedAt is timestamp);
-      allow update: if signedIn() && request.auth.uid == userId && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['displayName', 'photoURL', 'lastLogin', 'onboardingCompletedAt']) && (!request.resource.data.diff(resource.data).affectedKeys().hasAny(['onboardingCompletedAt']) || request.resource.data.onboardingCompletedAt is timestamp);
+      allow create: if signedIn() && request.auth.uid == userId && request.resource.data.uid == userId && request.resource.data.email == request.auth.token.email && request.resource.data.keys().hasOnly(['uid', 'email', 'displayName', 'photoURL', 'lastLogin', 'onboardingCompletedAt', 'onboardingCompletedPages']) && (!('onboardingCompletedAt' in request.resource.data) || request.resource.data.onboardingCompletedAt is timestamp) && (!('onboardingCompletedPages' in request.resource.data) || request.resource.data.onboardingCompletedPages is list);
+      allow update: if signedIn() && request.auth.uid == userId && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['displayName', 'photoURL', 'lastLogin', 'onboardingCompletedAt', 'onboardingCompletedPages']) && (!request.resource.data.diff(resource.data).affectedKeys().hasAny(['onboardingCompletedAt']) || request.resource.data.onboardingCompletedAt is timestamp) && (!request.resource.data.diff(resource.data).affectedKeys().hasAny(['onboardingCompletedPages']) || request.resource.data.onboardingCompletedPages is list);
       allow delete: if false;
     }
 
