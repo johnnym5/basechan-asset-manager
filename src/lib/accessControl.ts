@@ -13,7 +13,12 @@ export function canPerform(
   action: GrantAction,
 ): boolean {
   if (isAdmin(profile)) return true;
-  return profile?.role === "STAFF" && !!grant?.grants?.[resource]?.actions.includes(action);
+  const actions = grant?.grants?.[resource]?.actions || [];
+  const hasAction = actions.includes(action);
+  // Generating reports requires access to open the page and read its templates.
+  // Treat an explicit reporting-create grant as including reporting-read.
+  const reportCreateIncludesRead = resource === "reporting" && action === "read" && actions.includes("create");
+  return profile?.role === "STAFF" && (hasAction || reportCreateIncludesRead);
 }
 
 export function recordWithinScope(

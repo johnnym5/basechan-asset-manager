@@ -16,8 +16,9 @@ service cloud.firestore {
     }
     function grantExists() { return signedIn() && exists(/databases/$(database)/documents/access_grants/$(request.auth.uid)); }
     function grantData() { return get(/databases/$(database)/documents/access_grants/$(request.auth.uid)).data; }
+    function grantActions(page) { return grantData().get('grants', {}).get(page, {}).get('actions', []); }
     function grantAction(page, action) {
-      return isStaff() && grantExists() && grantData().grants[page].actions.hasAny([action]);
+      return isStaff() && grantExists() && (grantActions(page).hasAny([action]) || (page == 'reporting' && action == 'read' && grantActions(page).hasAny(['create'])));
     }
     function grantScope(page) { return grantData().grants[page].scope; }
     function reportAssignmentExists() {
