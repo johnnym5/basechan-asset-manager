@@ -53,11 +53,11 @@ export function ReportingTab({ userProfile, staffList, grant, onManageStaffAcces
         </div>
 
         {/* Sub-Navigation Pills */}
-        <div className="flex items-center gap-1.5 p-1 rounded-2xl bg-[var(--bg-muted)]/70 border border-[var(--border)] flex-wrap">
+        <div className="flex w-full flex-wrap items-center gap-1.5 rounded-2xl border border-[var(--border)] bg-[var(--bg-muted)]/70 p-1 sm:w-auto">
           <button
             type="button"
             onClick={() => setActiveSubTab("editor")}
-            className={`relative inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-semibold transition-all ${
+            className={`relative inline-flex min-h-11 flex-1 items-center justify-center gap-1.5 rounded-xl px-2.5 py-2 text-[11px] font-semibold transition-all sm:flex-none sm:px-3.5 sm:text-xs ${
               activeSubTab === "editor"
                 ? "text-blue-600 dark:text-gold-400 font-bold"
                 : "text-[var(--text-muted)] hover:text-[var(--text-primary)]"
@@ -77,7 +77,7 @@ export function ReportingTab({ userProfile, staffList, grant, onManageStaffAcces
           <button
             type="button"
             onClick={() => setActiveSubTab("weekly_comparison")}
-            className={`relative inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-semibold transition-all ${
+            className={`relative inline-flex min-h-11 flex-1 items-center justify-center gap-1.5 rounded-xl px-2.5 py-2 text-[11px] font-semibold transition-all sm:flex-none sm:px-3.5 sm:text-xs ${
               activeSubTab === "weekly_comparison"
                 ? "text-blue-600 dark:text-gold-400 font-bold"
                 : "text-[var(--text-muted)] hover:text-[var(--text-primary)]"
@@ -97,7 +97,7 @@ export function ReportingTab({ userProfile, staffList, grant, onManageStaffAcces
           <button
             type="button"
             onClick={() => setActiveSubTab("monthly_comparison")}
-            className={`relative inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-semibold transition-all ${
+            className={`relative inline-flex min-h-11 flex-1 items-center justify-center gap-1.5 rounded-xl px-2.5 py-2 text-[11px] font-semibold transition-all sm:flex-none sm:px-3.5 sm:text-xs ${
               activeSubTab === "monthly_comparison"
                 ? "text-blue-600 dark:text-gold-400 font-bold"
                 : "text-[var(--text-muted)] hover:text-[var(--text-primary)]"
@@ -118,7 +118,7 @@ export function ReportingTab({ userProfile, staffList, grant, onManageStaffAcces
             <button
               type="button"
               onClick={() => setActiveSubTab("admin_matrix")}
-              className={`relative inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-semibold transition-all ${
+              className={`relative inline-flex min-h-11 flex-1 items-center justify-center gap-1.5 rounded-xl px-2.5 py-2 text-[11px] font-semibold transition-all sm:flex-none sm:px-3.5 sm:text-xs ${
                 activeSubTab === "admin_matrix"
                   ? "text-amber-700 dark:text-amber-400 font-bold"
                   : "text-[var(--text-muted)] hover:text-[var(--text-primary)]"
@@ -136,7 +136,7 @@ export function ReportingTab({ userProfile, staffList, grant, onManageStaffAcces
             </button>
           )}
 
-          {isAdmin && <button type="button" onClick={() => setActiveSubTab("templates")} className={`rounded-xl px-3.5 py-2 text-xs font-semibold ${activeSubTab === "templates" ? "bg-[var(--bg-surface)] text-amber-700 shadow-xs" : "text-[var(--text-muted)]"}`}>Templates & Access</button>}
+          {isAdmin && <button type="button" onClick={() => setActiveSubTab("templates")} className={`min-h-11 flex-1 rounded-xl px-2.5 py-2 text-[11px] font-semibold sm:flex-none sm:px-3.5 sm:text-xs ${activeSubTab === "templates" ? "bg-[var(--bg-surface)] text-amber-700 shadow-xs" : "text-[var(--text-muted)]"}`}>Templates & Access</button>}
         </div>
       </div>
 

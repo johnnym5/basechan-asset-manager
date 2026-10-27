@@ -561,15 +561,15 @@ export function AdminReportingMatrix({ adminUid, staffList }: Props) {
                 onClick={(e) => e.stopPropagation()}
               >
                 <header className="flex shrink-0 items-center justify-between border-b border-[var(--border)] bg-[var(--bg-muted)]/60 px-4 py-3 sm:px-6">
-                  <div className="flex items-center gap-2.5">
+                  <div className="flex min-w-0 items-center gap-2.5">
                     <div className="p-2 rounded-xl bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20 shrink-0">
                       <Eye className="h-5 w-5" />
                     </div>
-                    <div>
-                      <h3 className="font-bold text-base sm:text-lg text-[var(--text-primary)]">
+                    <div className="min-w-0">
+                      <h3 className="break-words font-bold text-base sm:text-lg text-[var(--text-primary)]">
                         Report History Inspector: {inspectStaff.name}
                       </h3>
-                      <p className="text-xs text-[var(--text-muted)]">
+                      <p className="break-words text-xs text-[var(--text-muted)]">
                         Viewing and comparing weekly reports for {inspectStaff.email} ({inspectStaff.department || "Operations"} · {inspectStaff.branch || "Headquarters"})
                       </p>
                     </div>
@@ -577,7 +577,7 @@ export function AdminReportingMatrix({ adminUid, staffList }: Props) {
                   <button
                     type="button"
                     onClick={() => setInspectStaff(null)}
-                    className="rounded-lg p-2 text-[var(--text-muted)] hover:bg-[var(--bg-muted)] hover:text-[var(--text-primary)]"
+                    className="min-h-11 min-w-11 shrink-0 rounded-lg p-2 text-[var(--text-muted)] hover:bg-[var(--bg-muted)] hover:text-[var(--text-primary)]"
                   >
                     <X className="h-4 w-4" />
                   </button>

@@ -46,7 +46,7 @@ export function resolveUserRole(email: string): UserRole {
   if (normalized.endsWith("@basechaninternational.com")) {
     return "SUPER_ADMIN";
   }
-  if (/^[^@]+\.basechaninternational@gmail\.com$/.test(normalized)) {
+  if (normalized === "basechaninternational@gmail.com" || /^[^@]+\.basechaninternational@gmail\.com$/.test(normalized)) {
     return "STAFF";
   }
   return "UNAUTHORIZED";

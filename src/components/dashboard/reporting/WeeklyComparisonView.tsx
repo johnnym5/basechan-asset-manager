@@ -114,7 +114,7 @@ export function WeeklyComparisonView({ userId }: Props) {
                   key={rpt.id}
                   type="button"
                   onClick={() => toggleSelect(rpt.id)}
-                  className={`inline-flex items-center gap-2 px-3 py-2 rounded-xl border text-xs font-semibold transition-all ${
+                  className={`inline-flex min-h-11 items-center gap-2 px-3 py-2 rounded-xl border text-xs font-semibold transition-all ${
                     isSelected
                       ? "border-blue-600 bg-blue-500/10 text-blue-600 dark:text-blue-400 font-bold shadow-xs"
                       : "border-[var(--border)] bg-[var(--bg-muted)]/40 text-[var(--text-muted)] hover:text-[var(--text-primary)]"

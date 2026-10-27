@@ -11,6 +11,7 @@ service cloud.firestore {
     function isStaff() {
       return signedIn() && (
         request.auth.token.get('role', '') == 'STAFF' ||
+        request.auth.token.email == 'basechaninternational@gmail.com' ||
         request.auth.token.email.matches('^[^@]+[.]basechaninternational@gmail[.]com$')
       );
     }

@@ -195,7 +195,7 @@ export function MonthlyComparisonView({ userId, userName, canGenerate }: Props) 
           <select
             value={compileMonth}
             onChange={(e) => setCompileMonth(Number(e.target.value))}
-            className="rounded-lg border border-[var(--border)] bg-[var(--bg-surface)] px-2.5 py-1.5 text-xs font-semibold text-[var(--text-primary)] focus:outline-none"
+          className="min-h-11 rounded-lg border border-[var(--border)] bg-[var(--bg-surface)] px-3 py-2 text-xs font-semibold text-[var(--text-primary)] focus:outline-none"
           >
             {MONTH_NAMES.map((name, idx) => (
               <option key={name} value={idx + 1}>
@@ -206,7 +206,7 @@ export function MonthlyComparisonView({ userId, userName, canGenerate }: Props) 
           <select
             value={compileYear}
             onChange={(e) => setCompileYear(Number(e.target.value))}
-            className="rounded-lg border border-[var(--border)] bg-[var(--bg-surface)] px-2.5 py-1.5 text-xs font-semibold text-[var(--text-primary)] focus:outline-none"
+          className="min-h-11 rounded-lg border border-[var(--border)] bg-[var(--bg-surface)] px-3 py-2 text-xs font-semibold text-[var(--text-primary)] focus:outline-none"
           >
             {[2024, 2025, 2026].map((yr) => (
               <option key={yr} value={yr}>
@@ -218,7 +218,7 @@ export function MonthlyComparisonView({ userId, userName, canGenerate }: Props) 
             type="button"
             onClick={handleCompileMonth}
             disabled={compiling}
-            className="px-3.5 py-1.5 rounded-lg bg-navy-800 hover:bg-navy-700 text-gold-400 font-bold text-xs shadow-sm transition-all disabled:opacity-50 cursor-pointer"
+            className="min-h-11 px-3.5 py-2 rounded-lg bg-navy-800 hover:bg-navy-700 text-gold-400 font-bold text-xs shadow-sm transition-all disabled:opacity-50 cursor-pointer"
           >
             {compiling ? "Compiling..." : "Compile & Add Package"}
           </button>
@@ -240,7 +240,7 @@ export function MonthlyComparisonView({ userId, userName, canGenerate }: Props) 
                   key={pkg.id}
                   type="button"
                   onClick={() => toggleSelect(pkg.id)}
-                  className={`inline-flex items-center gap-2 px-3 py-2 rounded-xl border text-xs font-semibold transition-all ${
+                  className={`inline-flex min-h-11 items-center gap-2 px-3 py-2 rounded-xl border text-xs font-semibold transition-all ${
                     isSelected
                       ? "border-blue-600 bg-blue-500/10 text-blue-600 dark:text-blue-400 font-bold shadow-xs"
                       : "border-[var(--border)] bg-[var(--bg-muted)]/40 text-[var(--text-muted)] hover:text-[var(--text-primary)]"

@@ -45,14 +45,14 @@ export function WeeklyMetricsChart({ reports }: { reports: WeeklyReport[] }) {
         <div className="flex flex-wrap gap-x-4 gap-y-2">{OFFER_STATUSES.map((status) => <span key={status.key} className="inline-flex items-center gap-1.5 text-[10px] font-semibold text-[var(--text-muted)]"><i className="h-2.5 w-2.5 rounded-sm" style={{ backgroundColor: status.color }} />{status.label}</span>)}</div>
       </div>
       <div className="relative overflow-x-auto pb-2 pl-9">
-        <div className="relative flex min-w-[540px] items-stretch border-b border-l border-[var(--border)]" style={{ height: 270, backgroundImage: "repeating-linear-gradient(to bottom, transparent 0, transparent 49px, var(--border) 50px)" }}>
+        <div className="relative flex min-w-[420px] items-stretch border-b border-l border-[var(--border)] sm:min-w-[540px]" style={{ height: 270, backgroundImage: "repeating-linear-gradient(to bottom, transparent 0, transparent 49px, var(--border) 50px)" }}>
           {[maxValue, Math.round(maxValue / 2), 0].map((tick, index) => <span key={`${tick}-${index}`} className="absolute -left-9 text-[9px] text-[var(--text-muted)]" style={{ top: index === 0 ? 0 : index === 1 ? "48%" : "96%" }}>{tick}</span>)}
           {CHANNELS.map((channel) => <div key={channel} className="flex min-w-0 flex-1 flex-col justify-end border-r border-[var(--border)]/50 px-2">
-            <div className="flex h-full items-end justify-center gap-2">
+            <div className="flex h-full items-end justify-center gap-1 sm:gap-2">
               {applicationReports.map((report, reportIndex) => {
                 const entry = report.channels.find((item) => item.channel === channel)!;
                 const height = (entry.total / maxValue) * 82;
-                return <div key={report.reportId} className="flex h-full w-10 flex-col items-center justify-end" title={`${report.weekLabel} · ${channel}: ${entry.total} applications`}>
+                return <div key={report.reportId} className="flex h-full w-7 flex-col items-center justify-end sm:w-10" title={`${report.weekLabel} · ${channel}: ${entry.total} applications`}>
                   {entry.total > 0 && <span className="mb-1 text-[9px] font-bold text-[var(--text-primary)]">{entry.total}</span>}
                   <div className="flex w-full flex-col-reverse overflow-hidden rounded-t-sm" style={{ height: `${height}%`, minHeight: entry.total > 0 ? 2 : 0, boxShadow: `inset 0 0 0 1px ${WEEK_COLORS[reportIndex % WEEK_COLORS.length]}` }}>
                     {entry.statuses.map((status) => <div key={status.key} title={`${status.label}: ${status.value}`} style={{ height: `${entry.total ? (status.value / entry.total) * 100 : 0}%`, minHeight: status.value > 0 ? 2 : 0, backgroundColor: status.color }} />)}
